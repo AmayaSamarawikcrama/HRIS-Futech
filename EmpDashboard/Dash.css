@@ -1,0 +1,64 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+} 
+.header {
+    background: url('HRIS-Futech/Login/assets/33cb5bcaf0fcbe8fc4a78e7863c7e2d9.jpg') no-repeat center center/cover;
+    height: 300px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding: 20px;
+    position: relative;
+}
+.logout-button {
+    background-color: #163A70;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.dashboard {
+    display: flex;
+    justify-content: center;
+    margin-top: auto;
+    padding-bottom: 20px;
+}
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 1200px;
+    height: 200px;
+}
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+.button {
+    background-color: #163A70;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 5px;
+    cursor: pointer;
+}
+@media (max-width: 600px) {
+    .header {
+        height: 200px;
+    }
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .button {
+        padding: 10px;
+    }
+}
