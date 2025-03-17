@@ -31,13 +31,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['username'] = $user['Username'];
         $_SESSION['role'] = $user['Role'];
 
-        // Redirect based on username
-        if ($username == 'A001') {
-            header("Location: ../frontend/hello.html");
-        } elseif ($username == 'B001' || $username == 'C001') {
-            header("Location: ../frontend/hii.html");
+        // Redirect based on username prefix
+        if (strpos($username, 'E') === 0) {
+            header("Location: ../frontend/employee_dashboard.html");
+        } elseif (strpos($username, 'MN') === 0) {
+            header("Location: ../frontend/manager_dashboard.html");
+        } elseif (strpos($username, 'HR') === 0) {
+            header("Location: ../frontend/hr_dashboard.html");
         } else {
-            header("Location: ../frontend/dashboard.html"); // Default page for other users
+            echo "Invalid user type!";
         }
         exit();
     } else {
