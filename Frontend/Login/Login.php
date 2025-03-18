@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,10 +15,10 @@
                 <img src="assets/logo.png" alt="Logo" class="logo" style="width: 80px; height: auto;">
             </div>
             <!-- Form for login -->
-            <form action="" method="post">  <!-- Action points to the same page for processing -->
+            <form action="login.php" method="post"> <!-- Action points to the same file -->
                 <div class="input-group">
                     <div class="input-icon user-icon"></div>
-                    <input type="text" name="username" placeholder="User name" class="input-field" required>
+                    <input type="text" name="username" placeholder="Username" class="input-field" required>
                 </div>
                 <div class="input-group">
                     <div class="input-icon lock-icon"></div>
@@ -29,7 +31,7 @@
                     </div>
                     <a href="#" class="forgot-password">Forgot Password?</a>
                 </div>
-                <button type="submit" class="login-submit">LOGIN</button>
+                <button action="login.php" type="submit" class="login-submit">LOGIN</button>
             </form>
         </div>
     </div>
