@@ -1,4 +1,45 @@
+<?php
+session_start();
 
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "hris";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Capture the form data
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    if(!empty($username) && !empty($password)){
+        $sql = "SELECT * FROM userlogin WHERE Username = '$username' AND Password = '$password'";
+        $result = mysqli_query($conn, $sql);
+
+        if($result){
+            
+                if($result && mysqli_num_rows($result) > 0)
+                {
+                    $user_data =mysqli_fetch_assoc($result);
+
+                    if($user_data['Password'] == $password)
+                    {
+                        header("location: Dash.php");
+                        die;
+                    }
+                }
+            
+
+        }
+    }
+}
+
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -18,11 +59,11 @@
             <form action="login.php" method="post"> <!-- Action points to the same file -->
                 <div class="input-group">
                     <div class="input-icon user-icon"></div>
-                    <input type="text" name="username" placeholder="Username" class="input-field" required>
+                    <input id="username" type="text" name="username" placeholder="Username" class="input-field" required>
                 </div>
                 <div class="input-group">
                     <div class="input-icon lock-icon"></div>
-                    <input type="password" name="password" placeholder="Password" class="input-field" required>
+                    <input id="password" type="password" name="password" placeholder="Password" class="input-field" required>
                 </div>
                 <div class="options">
                     <div class="remember-me">
