@@ -1,3 +1,4 @@
+
 <?php
 session_start(); // Start session
 
@@ -15,7 +16,8 @@ try {
 
 // Check if form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'];
+    // Sanitize inputs
+    $username = htmlspecialchars($_POST['username']);
     $password = $_POST['password'];
 
     // Fetch user from database
@@ -33,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Redirect based on username prefix
         if (strpos($username, 'E') === 0) {
-            header("Location: ../frontend/employee_dashboard.html");
+            header("Location: ../frontend/EmpDashboard/dash.html");
         } elseif (strpos($username, 'MN') === 0) {
             header("Location: ../frontend/manager_dashboard.html");
         } elseif (strpos($username, 'HR') === 0) {
