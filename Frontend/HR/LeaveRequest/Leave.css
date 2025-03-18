@@ -1,0 +1,84 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background-color: #f7f8f9;
+}
+
+.logout-btn {
+        background-color: navy;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        cursor: pointer;
+        border-radius: 5px;
+        font-size: normal;
+        margin-left: 90%;
+}
+.menu-icon {
+    font-size: 30px;
+    cursor: pointer;
+    color: navy;
+}
+
+.container {
+    width: 80%;
+    margin: 20px auto;
+    text-align: left;
+}
+
+h2 {
+    color:navy;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+}
+
+table th, table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid navy;
+
+}
+th {
+    background-color: navy;
+    color: white;
+}
+
+thead {
+    background-color: navy;
+}
+
+.profile {
+    display: flex;
+    align-items: center;
+}
+
+.image{
+    width: 40px;
+    height: 40px;
+}
+
+.accept-btn {
+    background-color: navy;
+    color: white;
+    border: none;
+    padding: 10px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.accept-btn:hover {
+    background-color: #12203f;
+}
