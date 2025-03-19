@@ -62,16 +62,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             setcookie('last_login_time', time(), time() + 300, "/");
             
             redirectToDashboard($username);
-        } else {
+        }
+         else 
+         {
             echo "Invalid username or password.";
         }
     }
 }
 
-function redirectToDashboard($username) {
-    if (strpos($username, 'E') === 0) {
+function redirectToDashboard($username)
+ {
+    if (strpos($username, 'E') === 0) 
+    {
         header("Location: Dash.php");
-    } elseif (strpos($username, 'M') === 0 || strpos($username, 'H') === 0) {
+    } 
+    elseif (strpos($username, 'M') === 0 || strpos($username, 'H') === 0) 
+    {
         header("Location: hr_Dashboard.php");
     }
     exit;
