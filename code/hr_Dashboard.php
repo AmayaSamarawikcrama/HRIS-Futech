@@ -10,7 +10,7 @@
     <div class="container">
         <nav>
             <div class="menu-icon">&#9776;</div>
-            <button class="logout">Log Out</button>
+            <button action="Login.php" class="logout">Log Out</button>
         </nav>
         <div class="dashboard">
             <div class="card">Total Employee</div>

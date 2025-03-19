@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="header">
-        <button class="logout-button">Log Out</button>
+        <button action="Login.php" class="logout-button">Log Out</button>
         <img class="profile" src="assets/image.png" alt="Employee Details" width="40px" height="40px">
 
     </div>
