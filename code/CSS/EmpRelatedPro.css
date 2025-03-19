@@ -47,7 +47,8 @@ th, td {
     border: 1px solid navy;
 }
 th {
-    background-color: #c6dbff;
+    background-color: navy;
+    color: white;
 }
 tr:nth-child(even) {
     background-color: #f2f2f2;
