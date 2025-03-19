@@ -4,7 +4,7 @@ session_start();
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "hris";
+$dbname = "hris_db";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -17,28 +17,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    if(!empty($username) && !empty($password)){
-        $sql = "SELECT * FROM userlogin WHERE Username = '$username' AND Password = '$password'";
-        $result = mysqli_query($conn, $sql);
+    if (!empty($username) && !empty($password)) {
+        // Use prepared statements to prevent SQL injection
+        $stmt = $conn->prepare("SELECT * FROM userlogin WHERE Username = ? AND Password = ?");
+        $stmt->bind_param("ss", $username, $password);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-        if($result){
-            
-                if($result && mysqli_num_rows($result) > 0)
-                {
-                    $user_data =mysqli_fetch_assoc($result);
+        if ($result && $result->num_rows > 0) {
+            $user_data = $result->fetch_assoc();
 
-                    if($user_data['Password'] == $password)
-                    {
-                        header("location: Dash.php");
-                        die;
-                    }
-                }
-            
-
+            // Redirect based on the first letter of the username
+            if (strpos($username, 'E') === 0) {
+                header("Location: Dash.php");
+            } elseif (strpos($username, 'M') === 0) {
+                header("Location: hr_Dashboard.php");
+            } elseif (strpos($username, 'H') === 0) {
+                header("Location: hr_Dashboard.php");
+            } 
+            die;
         }
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -47,7 +47,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Page</title>
-    <link rel="stylesheet" href="Login.css">
+    <link rel="stylesheet" href="CSS/Login.css">
 </head>
 <body>
     <div class="login-container">
