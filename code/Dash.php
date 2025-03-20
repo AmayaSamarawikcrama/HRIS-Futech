@@ -8,9 +8,8 @@
 </head>
 <body>
     <div class="header">
-        <button action="Login.php" class="logout-button">Log Out</button>
+        <button onclick="logout()" class="logout-button">Log Out</button>
         <img class="profile" src="assets/image.png" alt="Employee Details" width="40px" height="40px">
-
     </div>
     <div class="dashboard">
         <div class="card">
@@ -27,5 +26,10 @@
             </div>
         </div>
     </div>
+    <script>
+        function logout() {
+            window.location.href = "logout.php";
+        }
+    </script>
 </body>
 </html>

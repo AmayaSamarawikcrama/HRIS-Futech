@@ -11,7 +11,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-if (isset($_COOKIE['auto_login_token']) && isset($_COOKIE['last_login_time']) && (time() - $_COOKIE['last_login_time']) <= 300) {
+if (isset($_COOKIE['auto_login_token']) && isset($_COOKIE['last_login_time']) && (time() - $_COOKIE['last_login_time']) <= 10) {
     $token = $_COOKIE['auto_login_token'];
     
     $stmt = $conn->prepare("SELECT * FROM userlogin WHERE Token = ?");
@@ -114,8 +114,8 @@ function redirectToDashboard($username)
                     </div>
                     <a href="#" class="forgot-password">Forgot Password?</a>
                 </div>
-                <button action="login.php" type="submit" class="login-submit">LOGIN</button>
-            </form>
+                <button type="submit" class="login-submit">LOGIN</button>
+                </form>
         </div>
     </div>
 </body>
