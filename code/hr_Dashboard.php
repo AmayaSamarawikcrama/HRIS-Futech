@@ -10,8 +10,8 @@
     <div class="container">
         <nav>
             <div class="menu-icon">&#9776;</div>
-            <button action="Login.php" class="logout">Log Out</button>
-        </nav>
+            <button onclick="logout()" class="logout-button">Log Out</button>
+            </nav>
         <div class="dashboard">
             <div class="card">Total Employee</div>
             <div class="card">Present Today</div>
@@ -30,5 +30,10 @@
             <button>Calendar</button>
         </div>
     </div>
+    <script>
+        function logout() {
+            window.location.href = "logout.php";
+        }
+    </script>
 </body>
 </html>
