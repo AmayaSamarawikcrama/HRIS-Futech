@@ -1,3 +1,77 @@
+<?php
+
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "hris_db";
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Get input values & sanitize
+$first_name = trim($_POST['first_name']);
+$last_name = trim($_POST['last_name']);
+$dob = $_POST['dob'];
+$gender = $_POST['gender'];
+$address = trim($_POST['address']);
+$phone = trim($_POST['phone']);
+$email = trim($_POST['email']);
+$marital_status = $_POST['marital_status'];
+$qualification = $_POST['qualification'];
+$experience = $_POST['experience'];
+$blood_type = $_POST['blood_type'];
+$insurance = $_POST['insurance'];
+$joining_date = $_POST['joining_date'];
+$leave_balance = $_POST['leave_balance'];
+$department_id = $_POST['department_id'];
+$manager_id = $_POST['manager_id'];
+$username = trim($_POST['username']);
+$password = password_hash($_POST['password'], PASSWORD_BCRYPT);
+$role = 'Employee'; // Default role
+
+// Generate unique Employee ID
+$emp_id = "EMP" . rand(1000, 9999);
+
+// Prepare Employee insert statement
+$sql_employee = $conn->prepare("INSERT INTO Employee (Emp_ID, First_Name, Last_Name, DOB, Gender, Address, Contact_No, Email, Marital_Status, Qualification, Experience, Blood_Type, Insurance, Joining_Date, Leave_Balance, Department_ID, Manager_ID) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+$sql_employee->bind_param("sssssssssssssssss", $emp_id, $first_name, $last_name, $dob, $gender, $address, $phone, $email, $marital_status, $qualification, $experience, $blood_type, $insurance, $joining_date, $leave_balance, $department_id, $manager_id);
+
+// Execute the query
+if ($sql_employee->execute()) {
+    // Generate unique User ID
+    $user_id = "USR" . rand(100, 999);
+
+    // Prepare UserLogin insert statement
+    $sql_user = $conn->prepare("INSERT INTO UserLogin (User_ID, Emp_ID, Username, Password, Role) 
+    VALUES (?, ?, ?, ?, ?)");
+
+    $sql_user->bind_param("sssss", $user_id, $emp_id, $username, $password, $role);
+
+    if ($sql_user->execute()) {
+        echo "Employee added successfully!";
+    } else {
+        echo "Error: " . $sql_user->error;
+    }
+} else {
+    echo "Error: " . $sql_employee->error;
+}
+
+// Close connection
+$conn->close();
+?>
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
