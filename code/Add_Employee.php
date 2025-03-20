@@ -126,7 +126,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <label for="manager_id">Manager ID:</label><br>
         <input type="text" id="manager_id" name="manager_id"><br>
 
-        <label for="job_type">Job Type:</label><br>
+        <label for="job_type">Job Type:</label>
+        <br>
         <select id="job_type" name="job_type" required>
             <option value="Manager">Manager</option>
             <option value="HR">HR</option>
