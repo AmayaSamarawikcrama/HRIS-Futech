@@ -17,31 +17,44 @@
         <h2>Add Employee</h2>
         <form>
             <div class="left">
-                <label for="name">Name</label> 
-                <input type="text" id="name" title="Enter your name" placeholder="Enter your name">
-                <label>Age</label> 
-                <input type="number" title="Enter your age" placeholder="Enter your age">
+                <label for="name">First Name</label> 
+                <input type="text" id="name" title="First Name" placeholder="First Name">
+                <label for="name">Last Name</label> 
+                <input type="text" id="name" title="Last Name" placeholder="Last Name">
+                <label>Date of Birth</label> 
+                <input type="date" title="Enter your date of birth" placeholder="Enter your date of birth">
+                <label>Gender</label> 
+                <input type="text" title="Enter your gender" placeholder="Enter your gender">
                 <label>Address</label>
                  <input type="text" title="Enter your address" placeholder="Enter your address">
                 <label>Phone Number</label>
                  <input type="tel" title="Enter your phone number" placeholder="Enter your phone number">
-                <label>Gender</label> 
-                <input type="text" title="Enter your gender" placeholder="Enter your gender">
-                <label>Date of Birth</label> 
-                <input type="date" title="Enter your date of birth" placeholder="Enter your date of birth">
-                <label>NIC</label> 
-                <input type="text" title="Enter your NIC" placeholder="Enter your NIC">
-                <label>Bank Acc No</label>
-                <input type="text" title="Enter your bank account number" placeholder="Enter your bank account number">
+                 <label>Email</label> 
+                <input type="text" title="Enter your Email" placeholder="Enter your Email">
+                <label>Marital Status</label>
+                <input type="text" title="Enter your Marital Status" placeholder="Enter your Marital Status">
+                <label>Qualification</label>
+                <input type="text" title="Enter your Qualification" placeholder="Enter your Qualification">
+                <label>Experience</label>
+                <input type="text" title="Enter your Experience" placeholder="Enter your Experience">
+                <label>Blood Type</label>
+                <input type="text" title="Enter your Blood Type" placeholder="Enter your Blood Type">
+                <label>Insurance</label>
+                <input type="text" title="Enter your Insurance" placeholder="Enter your Insurance">
+                <label>Joining Date</label>
+                <input type="date" title="Enter your Joining Date" placeholder="Enter your Joining Date">
+                <label>Leave Balance</label>
+                <input type="number" title="Enter your Leave Balance" placeholder="Enter your Leave Balance">
+                <label>Department ID</label>
+                <input type="text" title="Enter your Department ID" placeholder="Enter your Department ID">
+                <label>Manager ID</label>
+                <input type="text" title="Enter your Manager ID" placeholder="Enter your Manager ID">   
             </div>
             <div class="right">
-                <label>Emp. ID</label> 
-                <input type="text" title="Enter your employee ID" placeholder="Enter your employee ID">
+                <label>Username</label> 
+                <input type="text" title="Username" placeholder="Username">
                 <label>Password</label> 
                 <input type="password" title="Enter your password" placeholder="Enter your password">
-                <label>Department</label>
-                <input type="text" title="Enter your department" placeholder="Enter your department">
-                <label>Position</label> <input type="text" title="Enter your position" placeholder="Enter your position">
             </div>
             <button type="submit" class="submit">SUBMIT</button>
         </form>

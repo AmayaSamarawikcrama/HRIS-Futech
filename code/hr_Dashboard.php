@@ -20,6 +20,7 @@
         </div>
         <div class="buttons">
             <button>Employee Details</button>
+            <button onclick="window.location.href = 'Add_Employee.php';">Add Employee</button>
             <button>Project</button>
             <button>Attendance</button>
             <button>Leave State</button>
@@ -33,6 +34,9 @@
     <script>
         function logout() {
             window.location.href = "logout.php";
+        }
+        function EmpProfile() {
+            window.location.href = "EmpProfile.php";
         }
     </script>
 </body>
