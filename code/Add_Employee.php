@@ -1,137 +1,139 @@
 <?php
-
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "hris_db";
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+// Database connection
+$conn = new mysqli("localhost", "root", "", "hris_db");
 
 // Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Get input values & sanitize
-$first_name = trim($_POST['first_name']);
-$last_name = trim($_POST['last_name']);
-$dob = $_POST['dob'];
-$gender = $_POST['gender'];
-$address = trim($_POST['address']);
-$phone = trim($_POST['phone']);
-$email = trim($_POST['email']);
-$marital_status = $_POST['marital_status'];
-$qualification = $_POST['qualification'];
-$experience = $_POST['experience'];
-$blood_type = $_POST['blood_type'];
-$insurance = $_POST['insurance'];
-$joining_date = $_POST['joining_date'];
-$leave_balance = $_POST['leave_balance'];
-$department_id = $_POST['department_id'];
-$manager_id = $_POST['manager_id'];
-$username = trim($_POST['username']);
-$password = password_hash($_POST['password'], PASSWORD_BCRYPT);
-$role = 'Employee'; // Default role
+// Handling form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Get form data
+    $first_name = $_POST['first_name'];
+    $last_name = $_POST['last_name'];
+    $dob = $_POST['dob'];
+    $gender = $_POST['gender'];
+    $address = $_POST['address'];
+    $contact_no = isset($_POST['contact_no']) ? $_POST['contact_no'] : NULL;  // Ensure contact_no is set
+    $email = $_POST['email'];
+    $marital_status = $_POST['marital_status'];
+    $qualification = $_POST['qualification'];
+    $experience = $_POST['experience'];
+    $blood_type = $_POST['blood_type'];
+    $insurance = $_POST['insurance'];
+    $joining_date = $_POST['joining_date'];
+    $leave_balance = $_POST['leave_balance'];
+    $department_id = $_POST['department_id'];
+    $manager_id = $_POST['manager_id'];
+    $job_type = $_POST['job_type'];
 
-// Generate unique Employee ID
-$emp_id = "EMP" . rand(1000, 9999);
+    // Auto-generate Emp_ID (example: E001, E002, ...)
+    $result = $conn->query("SELECT MAX(Emp_ID) AS max_emp_id FROM Employee");
+    $row = $result->fetch_assoc();
+    $max_emp_id = $row['max_emp_id'];
+    $emp_id = 'E' . str_pad(substr($max_emp_id, 1) + 1, 3, '0', STR_PAD_LEFT);
 
-// Prepare Employee insert statement
-$sql_employee = $conn->prepare("INSERT INTO Employee (Emp_ID, First_Name, Last_Name, DOB, Gender, Address, Contact_No, Email, Marital_Status, Qualification, Experience, Blood_Type, Insurance, Joining_Date, Leave_Balance, Department_ID, Manager_ID) 
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    // Prepare SQL query to insert employee data
+    $sql = $conn->prepare("INSERT INTO Employee 
+        (Emp_ID, First_Name, Last_Name, DOB, Gender, Address, Contact_No, Email, Marital_Status, Qualification, 
+        Experience, Blood_Type, Insurance, Joining_Date, Leave_Balance, Department_ID, Manager_ID, Job_Type) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-$sql_employee->bind_param("sssssssssssssssss", $emp_id, $first_name, $last_name, $dob, $gender, $address, $phone, $email, $marital_status, $qualification, $experience, $blood_type, $insurance, $joining_date, $leave_balance, $department_id, $manager_id);
+    if ($sql === false) {
+        die("Error preparing query: " . $conn->error);
+    }
 
-// Execute the query
-if ($sql_employee->execute()) {
-    // Generate unique User ID
-    $user_id = "USR" . rand(100, 999);
+    // Bind parameters
+    $sql->bind_param("ssssssssssssssssss", $emp_id, $first_name, $last_name, $dob, $gender, $address, $contact_no, $email, $marital_status, $qualification, $experience, $blood_type, $insurance, $joining_date, $leave_balance, $department_id, $manager_id, $job_type);
 
-    // Prepare UserLogin insert statement
-    $sql_user = $conn->prepare("INSERT INTO UserLogin (User_ID, Emp_ID, Username, Password, Role) 
-    VALUES (?, ?, ?, ?, ?)");
-
-    $sql_user->bind_param("sssss", $user_id, $emp_id, $username, $password, $role);
-
-    if ($sql_user->execute()) {
+    // Execute the query
+    if ($sql->execute()) {
         echo "Employee added successfully!";
     } else {
-        echo "Error: " . $sql_user->error;
+        echo "Error: " . $sql->error;
     }
-} else {
-    echo "Error: " . $sql_employee->error;
+
+    // Close the statement and connection
+    $sql->close();
+    $conn->close();
 }
-
-// Close connection
-$conn->close();
 ?>
-
-
-
-
-
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Employee</title>
-    <link rel="stylesheet" href="CSS/Add_Employee.css">
 </head>
 <body>
-    <div class="container">
-        <nav>
-            <div class="menu-icon">&#9776;</div>
-            <button class="logout">Log Out</button>
-            <img class="profile" src="assets/image.png" alt="Employee Details" width="40px" height="40px">
+    <h2>Add New Employee</h2>
+    <form method="post">
+        <label for="first_name">First Name:</label><br>
+        <input type="text" id="first_name" name="first_name" required><br>
 
-        </nav>
-        <h2>Add Employee</h2>
-        <form>
-            <div class="left">
-                <label for="name">First Name</label> 
-                <input type="text" id="name" title="First Name" placeholder="First Name">
-                <label for="name">Last Name</label> 
-                <input type="text" id="name" title="Last Name" placeholder="Last Name">
-                <label>Date of Birth</label> 
-                <input type="date" title="Enter your date of birth" placeholder="Enter your date of birth">
-                <label>Gender</label> 
-                <input type="text" title="Enter your gender" placeholder="Enter your gender">
-                <label>Address</label>
-                 <input type="text" title="Enter your address" placeholder="Enter your address">
-                <label>Phone Number</label>
-                 <input type="tel" title="Enter your phone number" placeholder="Enter your phone number">
-                 <label>Email</label> 
-                <input type="text" title="Enter your Email" placeholder="Enter your Email">
-                <label>Marital Status</label>
-                <input type="text" title="Enter your Marital Status" placeholder="Enter your Marital Status">
-                <label>Qualification</label>
-                <input type="text" title="Enter your Qualification" placeholder="Enter your Qualification">
-                <label>Experience</label>
-                <input type="text" title="Enter your Experience" placeholder="Enter your Experience">
-                <label>Blood Type</label>
-                <input type="text" title="Enter your Blood Type" placeholder="Enter your Blood Type">
-                <label>Insurance</label>
-                <input type="text" title="Enter your Insurance" placeholder="Enter your Insurance">
-                <label>Joining Date</label>
-                <input type="date" title="Enter your Joining Date" placeholder="Enter your Joining Date">
-                <label>Leave Balance</label>
-                <input type="number" title="Enter your Leave Balance" placeholder="Enter your Leave Balance">
-                <label>Department ID</label>
-                <input type="text" title="Enter your Department ID" placeholder="Enter your Department ID">
-                <label>Manager ID</label>
-                <input type="text" title="Enter your Manager ID" placeholder="Enter your Manager ID">   
-            </div>
-            <div class="right">
-                <label>Username</label> 
-                <input type="text" title="Username" placeholder="Username">
-                <label>Password</label> 
-                <input type="password" title="Enter your password" placeholder="Enter your password">
-            </div>
-            <button type="submit" class="submit">SUBMIT</button>
-        </form>
-    </div>
+        <label for="last_name">Last Name:</label><br>
+        <input type="text" id="last_name" name="last_name" required><br>
+
+        <label for="dob">Date of Birth:</label><br>
+        <input type="date" id="dob" name="dob"><br>
+
+        <label for="gender">Gender:</label><br>
+        <select id="gender" name="gender" required>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select><br>
+
+        <label for="address">Address:</label><br>
+        <textarea id="address" name="address"></textarea><br>
+
+        <label for="contact_no">Contact Number:</label><br>
+        <input type="text" id="contact_no" name="contact_no"><br> <!-- This can be left empty or optional -->
+
+        <label for="email">Email:</label><br>
+        <input type="email" id="email" name="email" required><br>
+
+        <label for="marital_status">Marital Status:</label><br>
+        <select id="marital_status" name="marital_status" required>
+            <option value="Single">Single</option>
+            <option value="Married">Married</option>
+            <option value="Divorced">Divorced</option>
+            <option value="Widowed">Widowed</option>
+        </select><br>
+
+        <label for="qualification">Qualification:</label><br>
+        <input type="text" id="qualification" name="qualification"><br>
+
+        <label for="experience">Experience:</label><br>
+        <input type="number" id="experience" name="experience"><br>
+
+        <label for="blood_type">Blood Type:</label><br>
+        <input type="text" id="blood_type" name="blood_type"><br>
+
+        <label for="insurance">Insurance:</label><br>
+        <input type="text" id="insurance" name="insurance"><br>
+
+        <label for="joining_date">Joining Date:</label><br>
+        <input type="date" id="joining_date" name="joining_date"><br>
+
+        <label for="leave_balance">Leave Balance:</label><br>
+        <input type="number" id="leave_balance" name="leave_balance" value="0"><br>
+
+        <label for="department_id">Department:</label><br>
+        <input type="text" id="department_id" name="department_id" required><br>
+
+        <label for="manager_id">Manager ID:</label><br>
+        <input type="text" id="manager_id" name="manager_id"><br>
+
+        <label for="job_type">Job Type:</label><br>
+        <select id="job_type" name="job_type" required>
+            <option value="Manager">Manager</option>
+            <option value="HR">HR</option>
+            <option value="Employee">Employee</option>
+        </select><br>
+
+        <input type="submit" value="Add Employee">
+    </form>
 </body>
 </html>
