@@ -14,7 +14,7 @@
     <div class="dashboard">
         <div class="card">
             <div class="grid">
-                <div class="button">Profile</div>
+                <div class="button" onclick="EmpProfile()">Profile</div>
                 <div class="button">My Performance</div>
                 <div class="button">Reports</div>
                 <div class="button">Related Project</div>
@@ -29,6 +29,9 @@
     <script>
         function logout() {
             window.location.href = "logout.php";
+        }
+        function EmpProfile() {
+            window.location.href = "EmpProfile.php";
         }
     </script>
 </body>
