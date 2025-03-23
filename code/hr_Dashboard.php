@@ -22,16 +22,16 @@
             <div class="card">On Leave Today</div>
         </div>
         <div class="buttons">
-            <button>Employee Details</button>
+            <button onclick="location.href='View_Employee.html'">Employee Details</button>
             <button onclick="window.location.href = 'Add_Employee.php';">Add Employee</button>
             <button>Project</button>
-            <button>Attendance</button>
-            <button>Leave State</button>
-            <button>Salary Status</button>
+            <button onclick="location.href='Attendance.html'">Attendance</button>
+            <button onclick="location.href='Leave.html'">Leave State</button>
+            <button onclick="location.href='Salary.html'">Salary Status</button>
             <button>Employee Performance</button>
             <button>Report</button>
-            <button>Company</button>
-            <button>Calendar</button>
+            <button onclick="location.href='Company.html'">Company</button>
+            <button onclick="location.href='Calendar.html'">Calendar</button>
         </div>
     </div>
     <script>
