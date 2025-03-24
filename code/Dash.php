@@ -14,7 +14,7 @@
     <div class="dashboard">
         <div class="card">
             <div class="grid">
-                <div class="button" onclick="EmpProfile()">Profile</div>
+                <div class="button" onclick="EmpProfile()">My Profile</div>
                 <div class="button">My Performance</div>
                 <div class="button">Reports</div>
                 <div class="button">Related Project</div>
