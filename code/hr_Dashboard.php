@@ -22,7 +22,7 @@
             <div class="card">On Leave Today</div>
         </div>
         <div class="buttons">
-            <button onclick="location.href='View_Employee.php'">Employee Details</button>
+            <button onclick="location.href='View_Employee.php'">Employee Details.</button>
             <button onclick="window.location.href = 'Add_Employee.php';">Add Employee</button>
             <button>Project</button>
             <button onclick="location.href='Attendance.php'">Attendance</button>
