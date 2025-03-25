@@ -17,7 +17,7 @@
                 <div class="button" onclick="EmpProfile()">My Profile</div>
                 <div class="button">My Performance</div>
                 <div class="button">Reports</div>
-                <div class="button">Related Project</div>
+                <div class="button">Related Projects</div>
                 <div class="button">My Salary Status</div>
                 <div class="button">Company Details</div>
                 <div class="button">Leave Request</div>
