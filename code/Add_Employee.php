@@ -65,6 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <title>Add Employee</title>
+    <link rel="stylesheet" href="Add_Employee.css">
 </head>
 <body>
     <h2>Add New Employee</h2>

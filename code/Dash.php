@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dash</title>
-    <link rel="stylesheet" href="CSS/Dash.css">
+    <link rel="stylesheet" href="Dash.css">
 </head>
 <body>
     <div class="header">
