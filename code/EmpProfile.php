@@ -1,3 +1,63 @@
+<?php
+session_start();
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "hris_db";
+
+// Connect to MySQL
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// Get logged-in user's ID from session
+$user_id = $_SESSION['user_id'];
+
+// 🔹 Fetch Emp_ID from `userlogin` table
+$stmt = $conn->prepare("SELECT Emp_ID FROM userlogin WHERE User_ID = ?");
+$stmt->bind_param("s", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $emp_id = $row['Emp_ID'];
+} else {
+    die("<p style='color:red;'>Error: Employee details not found in userlogin table.</p>");
+}
+
+// 🔹 Fetch Employee Details based on the database schema
+$stmt = $conn->prepare("
+    SELECT e.First_Name, e.Last_Name, e.Email, j.Job_Title, d.Dept_Name 
+    FROM Employee e
+    LEFT JOIN EmployeeJob ej ON e.Emp_ID = ej.Emp_ID
+    LEFT JOIN JobProfile j ON ej.Job_ID = j.Job_ID
+    LEFT JOIN Department d ON e.Department_ID = d.Dept_ID
+    WHERE e.Emp_ID = ?
+");
+$stmt->bind_param("s", $emp_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $employee = $result->fetch_assoc();
+} else {
+    die("<p style='color:red;'>Error: Employee details not found in Employee table.</p>");
+}
+
+$stmt->close();
+$conn->close();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,82 +68,28 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="menu-icon">&#9776;</div>
-        <button class="logout">Log Out</button>
-        <img class="profile" src="profile.png" alt="Employee Details" width="40px" height="40px">
+        <button onclick="logout()" class="logout">Log Out</button>
+        <img class="profile" src="profile.png" alt="Employee Profile" width="40px" height="40px">
     </nav>
+    
     <div class="container">
         <div class="sidebar">
             <h2>Profile</h2>
-            <img class="profile-pic" src="profile.png" alt="Employee Details">
+            <img class="profile-pic" src="profile.png" alt="Employee Picture">
         </div>
         <main class="content">
-            <form>
-                <div class="profile-details">
-                    <label for="emp_id">Employee ID</label> 
-                    <input type="text" id="emp_id" name="emp_id" placeholder="Enter Employee ID" required>
-                    
-                    <label for="first_name">First Name</label>
-                    <input type="text" id="first_name" name="first_name" placeholder="Enter First Name" required>
-                    
-                    <label for="last_name">Last Name</label>
-                    <input type="text" id="last_name" name="last_name" placeholder="Enter Last Name" required>
-                    
-                    <label for="dob">Date of Birth</label>
-                    <input type="date" id="dob" name="dob" required>
-                    
-                    <label for="gender">Gender</label>
-                    <select id="gender" name="gender" required>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                    </select>
-                    
-                    <label for="address">Address</label>
-                    <input type="text" id="address" name="address" placeholder="Enter Address">
-                    
-                    <label for="contact_no">Phone Number</label>
-                    <input type="tel" id="contact_no" name="contact_no" placeholder="Enter Phone Number">
-                    
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="Enter Email" required>
-                    
-                    <label for="marital_status">Marital Status</label>
-                    <select id="marital_status" name="marital_status">
-                        <option value="Single">Single</option>
-                        <option value="Married">Married</option>
-                        <option value="Divorced">Divorced</option>
-                        <option value="Widowed">Widowed</option>
-                    </select>
-                    
-                    <label for="qualification">Qualification</label>
-                    <input type="text" id="qualification" name="qualification" placeholder="Enter Qualification">
-                    
-                    <label for="experience">Experience (Years)</label>
-                    <input type="number" id="experience" name="experience" placeholder="Enter Experience">
-                    
-                    <label for="blood_type">Blood Type</label>
-                    <input type="text" id="blood_type" name="blood_type" placeholder="Enter Blood Type">
-                    
-                    <label for="insurance">Insurance</label>
-                    <input type="text" id="insurance" name="insurance" placeholder="Enter Insurance Details">
-                    
-                    <label for="joining_date">Joining Date</label>
-                    <input type="date" id="joining_date" name="joining_date" required>
-                    
-                    <label for="leave_balance">Leave Balance</label>
-                    <input type="number" id="leave_balance" name="leave_balance" placeholder="Enter Leave Balance">
-                    
-                    <label for="department_id">Department ID</label>
-                    <input type="text" id="department_id" name="department_id" placeholder="Enter Department ID">
-                    
-                    <label for="manager_id">Manager ID</label>
-                    <input type="text" id="manager_id" name="manager_id" placeholder="Enter Manager ID">
-                    
-                    <button type="submit" class="submit-btn">Save Profile</button>
-                </div>
-            </form>
+            <h2>Employee Details</h2>
+            <p><strong>Name:</strong> <?php echo htmlspecialchars($employee['First_Name'] . ' ' . $employee['Last_Name']); ?></p>
+            <p><strong>Email:</strong> <?php echo htmlspecialchars($employee['Email']); ?></p>
+            <p><strong>Position:</strong> <?php echo htmlspecialchars($employee['Job_Title'] ?? 'Not Assigned'); ?></p>
+            <p><strong>Department:</strong> <?php echo htmlspecialchars($employee['Dept_Name'] ?? 'Not Assigned'); ?></p>
         </main>
     </div>
+    
+    <script>
+        function logout() {
+            window.location.href = "logout.php";
+        }
+    </script>
 </body>
 </html>
