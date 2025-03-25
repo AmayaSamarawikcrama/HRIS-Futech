@@ -121,7 +121,7 @@ CREATE TABLE Employee (
     First_Name VARCHAR(50) NOT NULL,
     Last_Name VARCHAR(50) NOT NULL,
     Date_of_Birth DATE NOT NULL,
-    Gender ENUM('Male', 'Female') NOT NULL,
+    Gender ENUM('Male','Female') NOT NULL,
     Address TEXT,
     Contact_Number VARCHAR(15) UNIQUE CHECK (Contact_Number REGEXP '^[0-9]{10,15}$'),
     Email VARCHAR(100) UNIQUE CHECK (Email LIKE '%@%._%'),
