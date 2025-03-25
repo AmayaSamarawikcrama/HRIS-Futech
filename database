@@ -249,6 +249,5 @@ CREATE TABLE User_Account (
     Employee_ID INT UNIQUE NOT NULL,
     Username VARCHAR(50) NOT NULL UNIQUE,
     Password VARCHAR(255) NOT NULL,
-    User_Type ENUM('Admin', 'Manager', 'Employee') NOT NULL,
     FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID) ON DELETE CASCADE
 );
