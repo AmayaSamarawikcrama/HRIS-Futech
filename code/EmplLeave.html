@@ -12,13 +12,13 @@
       <div class="menu-icon">&#9776;</div>
       <button class="logout">Log Out</button>
       <img class="profile-pic" src="assets/profile.png" alt="Employee Details">
-
     </header>
     <main>
       <section class="left-panel">
         <h1>Leave Request</h1>
         <div class="info-box">
-          <div class="status accepted">Accepted Your Request</div>
+            <div class="status accepted">Accepted Your Request</div>
+    
           <div class="leave-count">You Have Only 40 Leaves</div>
         </div>
         <a href="#" class="leave-history">Leave History</a>
@@ -26,6 +26,8 @@
             <label for="emp_id">Employee ID:</label>
             <input type="text" id="emp_id" name="emp_id" placeholder="Enter your Employee ID" required>
 
+            <label for="emp_name">Employee Name:</label>
+            <input type="text" id="emp_name" name="emp_name" placeholder="Enter your Name" required>
             <label for="leave_type">Leave Type:</label>
             <select id="leave_type" name="leave_type" required>
                 <option value="">Select Leave Type</option>
@@ -44,6 +46,9 @@
 
             <label for="reason">Reason:</label>
             <textarea id="reason" name="reason" rows="3" required></textarea>
+
+            <label for="contact_no">Contact Number:</label>
+            <input type="text" id="contact_no" name="contact_no" pattern="[0-9]{10,15}" placeholder="Enter 10-15 digits" required>
 
           <button type="submit" class="submit">SUBMIT</button>
         </form>
