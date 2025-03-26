@@ -137,6 +137,9 @@ CREATE TABLE Employee (
     FOREIGN KEY (Manager_ID) REFERENCES Employee(Employee_ID) ON DELETE SET NULL
 );
 
+ALTER TABLE Employee ADD COLUMN Password VARCHAR(255) NOT NULL;
+
+
 -- Create a sequence table to track the auto-increment value for Employee_ID
 CREATE TABLE Employee_ID_Sequence (
     ID INT PRIMARY KEY AUTO_INCREMENT

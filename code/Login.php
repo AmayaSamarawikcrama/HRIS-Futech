@@ -90,7 +90,7 @@ function redirectToDashboard($username)
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Page</title>
-    <link rel="stylesheet" href="CSS/Login.css">
+    <link rel="stylesheet" href="Login.css">
 </head>
 <body>
     <div class="login-container">

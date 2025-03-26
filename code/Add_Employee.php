@@ -10,42 +10,45 @@ if ($conn->connect_error) {
 // Handling form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Get form data
-    $first_name = $_POST['first_name'];
-    $last_name = $_POST['last_name'];
+    $first_name = trim($_POST['first_name']);
+    $last_name = trim($_POST['last_name']);
     $dob = $_POST['dob'];
     $gender = $_POST['gender'];
-    $address = $_POST['address'];
-    $contact_no = isset($_POST['contact_no']) ? $_POST['contact_no'] : NULL;  // Ensure contact_no is set
-    $email = $_POST['email'];
-    $marital_status = $_POST['marital_status'];
-    $qualification = $_POST['qualification'];
-    $experience = $_POST['experience'];
-    $blood_type = $_POST['blood_type'];
-    $insurance = $_POST['insurance'];
-    $joining_date = $_POST['joining_date'];
-    $leave_balance = $_POST['leave_balance'];
+    $address = trim($_POST['address']);
+    $contact_no = isset($_POST['contact_no']) ? trim($_POST['contact_no']) : NULL;
+    $email = trim($_POST['email']);
+    $qualification = trim($_POST['qualification']);
+    $insurance = trim($_POST['insurance']);
+    $hire_date = $_POST['hire_date'];
+    $salary = $_POST['salary'];
     $department_id = $_POST['department_id'];
     $manager_id = $_POST['manager_id'];
-    $job_type = $_POST['job_type'];
-
-    // Auto-generate Emp_ID (example: E001, E002, ...)
-    $result = $conn->query("SELECT MAX(Emp_ID) AS max_emp_id FROM Employee");
+    $employee_type = $_POST['employee_type'];
+    $blood_type = $_POST['blood_type'];
+    $marital_status = isset($_POST['marital_status']) ? $_POST['marital_status'] : NULL;
+    
+    // Generate Employee_ID
+    $prefix = ($employee_type == 'HumanResource Manager') ? 'HM' : 'EMP';
+    $result = $conn->query("SELECT MAX(CAST(SUBSTRING(Employee_ID, 3) AS UNSIGNED)) AS max_id FROM Employee WHERE Employee_ID LIKE '$prefix%'");
     $row = $result->fetch_assoc();
-    $max_emp_id = $row['max_emp_id'];
-    $emp_id = 'E' . str_pad(substr($max_emp_id, 1) + 1, 3, '0', STR_PAD_LEFT);
+    $max_id = $row['max_id'] ? $row['max_id'] + 1 : 1;
+    $employee_id = $prefix . str_pad($max_id, 4, '0', STR_PAD_LEFT);
 
     // Prepare SQL query to insert employee data
     $sql = $conn->prepare("INSERT INTO Employee 
-        (Emp_ID, First_Name, Last_Name, DOB, Gender, Address, Contact_No, Email, Marital_Status, Qualification, 
-        Experience, Blood_Type, Insurance, Joining_Date, Leave_Balance, Department_ID, Manager_ID, Job_Type) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        (Employee_ID, Password, Employee_Type, First_Name, Last_Name, Date_of_Birth, Gender, Address, Contact_Number, Email, Qualification, 
+        Insurance, Blood_Type, Marital_Status, Hire_Date, Salary, Department_ID, Manager_ID) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
     if ($sql === false) {
         die("Error preparing query: " . $conn->error);
     }
 
+    // Default password (should be hashed in production)
+    $default_password = password_hash("password123", PASSWORD_BCRYPT);
+    
     // Bind parameters
-    $sql->bind_param("ssssssssssssssssss", $emp_id, $first_name, $last_name, $dob, $gender, $address, $contact_no, $email, $marital_status, $qualification, $experience, $blood_type, $insurance, $joining_date, $leave_balance, $department_id, $manager_id, $job_type);
+    $sql->bind_param("sssssssssssssssdss", $employee_id, $default_password, $employee_type, $first_name, $last_name, $dob, $gender, $address, $contact_no, $email, $qualification, $insurance, $blood_type, $marital_status, $hire_date, $salary, $department_id, $manager_id);
 
     // Execute the query
     if ($sql->execute()) {
@@ -112,6 +115,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 <label for="blood_type">Blood Type:</label>
                 <select id="blood_type" name="blood_type">
+                    <option value="">Select Blood Type</option>
                     <option value="A+">A+</option>
                     <option value="A-">A-</option>
                     <option value="B+">B+</option>
@@ -120,6 +124,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <option value="O-">O-</option>
                     <option value="AB+">AB+</option>
                     <option value="AB-">AB-</option>
+                </select>
+
+                <label for="marital_status">Marital Status:</label>
+                <select id="marital_status" name="marital_status" required>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Widowed">Widowed</option>
                 </select>
 
                 <label for="hire_date">Hire Date:</label>
@@ -133,12 +145,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <label for="department_id">Department:</label>
                 <input type="number" id="department_id" name="department_id" required>
 
-                <label for="manager_id">Employee ID:</label>
+                <label for="manager_id">Manager ID:</label>
                 <input type="text" id="manager_id" name="manager_id">
 
                 <label for="employee_type">Employee Type:</label>
                 <select id="employee_type" name="employee_type" required>
-                    <option value="HumanResource Manager">HumanResource Manager</option>
+                    <option value="">Select Type</option>
+                    <option value="HumanResource Manager">Human Resource Manager</option>
                     <option value="Employee">Employee</option>
                 </select>
             </div>
