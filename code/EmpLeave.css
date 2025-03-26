@@ -11,14 +11,9 @@ body {
 }
 
 .container {
-    max-width: 1200px;
-    margin: 40px auto;
+  
     background: #fff;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    padding-bottom: 20px;
-}
+   
 
 
 header {
