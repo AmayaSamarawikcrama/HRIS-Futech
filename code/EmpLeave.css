@@ -57,7 +57,7 @@ header {
 }
 
 .logout:hover {
-    background-color: darkblue;
+    background-color: navy;
 }
 
 
@@ -75,7 +75,7 @@ main {
 .left-panel h1 {
     font-size: 2.2em;
     margin-bottom: 20px;
-    color: #002f66;
+    color: navy;
 }
 
 .info-box {
@@ -95,7 +95,16 @@ main {
 
 .status.accepted {
     background-color: green;
-    color: #fff;
+    }
+
+    .status.rejected {
+        background-color: red;
+        color: #fff;
+    }
+
+    .status.pending {
+        background-color: yellow;
+        color: #000;
 }
 
 .leave-count {
@@ -127,7 +136,7 @@ form {
 label {
     font-size: 0.95em;
     font-weight: bold;
-    color: #555;
+    color: navy;
 }
 
 input,
