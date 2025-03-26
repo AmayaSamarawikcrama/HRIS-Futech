@@ -12,27 +12,63 @@ body {
 
 .navbar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    background-color: #fff;
+    justify-content: space-between;
+    background-color: #ffffff;
     padding: 15px 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    
 }
 
- .logout {
-    background-color: navy;
-    color: white;
+.menu-icon {
+    font-size: 30px;
+    cursor: pointer;
+}
+
+.logout {
+    background: navy;
     border: none;
     padding: 10px 15px;
     cursor: pointer;
     border-radius: 5px;
-    font-size: 12px;
-    margin-left: 80%;
+    color: white;
+    font-size: 16px;
+    margin-left: 85%;
 }
-.menu-icon {
-    font-size: 30px;
+
+.profile {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.search-bar input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.search-bar button {
+    background-color: navy;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    margin-left: 10px;
     cursor: pointer;
-    color: navy;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.search-bar button:hover {
+    background-color: navy;
 }
 
 .table-container {
@@ -43,10 +79,12 @@ body {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+
 table {
     width: 100%;
     border-collapse: collapse;
 }
+
 
 table th, table td {
     padding: 15px;
@@ -54,10 +92,12 @@ table th, table td {
     border-bottom: 1px solid navy;
 }
 
+
 table th {
-    background-color:navy;
+    background-color: navy;
     color: white;
 }
+
 
 .profile-pic {
     width: 30px;
@@ -65,4 +105,26 @@ table th {
     border-radius: 50%;
     margin-right: 10px;
     vertical-align: middle;
+}
+
+
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+    }
+
+    .logout {
+        margin-left: 0;
+        font-size: 14px;
+    }
+
+    .table-container {
+        padding: 10px;
+    }
+
+    table {
+        min-width: 100%;
+    }
 }
