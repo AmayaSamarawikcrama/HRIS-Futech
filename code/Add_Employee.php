@@ -9,24 +9,30 @@ if ($conn->connect_error) {
 
 // Handling form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get form data
+    // Sanitize and validate input
     $first_name = trim($_POST['first_name']);
     $last_name = trim($_POST['last_name']);
     $dob = $_POST['dob'];
     $gender = $_POST['gender'];
     $address = trim($_POST['address']);
-    $contact_no = isset($_POST['contact_no']) ? trim($_POST['contact_no']) : NULL;
+    $contact_no = !empty($_POST['contact_no']) ? trim($_POST['contact_no']) : NULL;
     $email = trim($_POST['email']);
     $qualification = trim($_POST['qualification']);
     $insurance = trim($_POST['insurance']);
     $hire_date = $_POST['hire_date'];
     $salary = $_POST['salary'];
     $department_id = $_POST['department_id'];
-    $manager_id = $_POST['manager_id'];
+    $manager_id = !empty($_POST['manager_id']) ? $_POST['manager_id'] : NULL;
     $employee_type = $_POST['employee_type'];
-    $blood_type = $_POST['blood_type'];
-    $marital_status = isset($_POST['marital_status']) ? $_POST['marital_status'] : NULL;
-    
+    $blood_type = !empty($_POST['blood_type']) ? $_POST['blood_type'] : NULL;
+    $marital_status = !empty($_POST['marital_status']) ? $_POST['marital_status'] : 'Single';
+    $password = password_hash($_POST['password'], PASSWORD_BCRYPT); // Hash the password securely
+
+    // Validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        die("Invalid email format.");
+    }
+
     // Generate Employee_ID
     $prefix = ($employee_type == 'HumanResource Manager') ? 'HM' : 'EMP';
     $result = $conn->query("SELECT MAX(CAST(SUBSTRING(Employee_ID, 3) AS UNSIGNED)) AS max_id FROM Employee WHERE Employee_ID LIKE '$prefix%'");
@@ -34,25 +40,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $max_id = $row['max_id'] ? $row['max_id'] + 1 : 1;
     $employee_id = $prefix . str_pad($max_id, 4, '0', STR_PAD_LEFT);
 
-    // Prepare SQL query to insert employee data
+    // Prepare SQL query
     $sql = $conn->prepare("INSERT INTO Employee 
-        (Employee_ID, Password, Employee_Type, First_Name, Last_Name, Date_of_Birth, Gender, Address, Contact_Number, Email, Qualification, 
-        Insurance, Blood_Type, Marital_Status, Hire_Date, Salary, Department_ID, Manager_ID) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    (Employee_ID, Password, Employee_Type, First_Name, Last_Name, Date_of_Birth, Gender, Address, Contact_Number, Email, Qualification, 
+    Insurance, Blood_Type, Marital_Status, Hire_Date, Salary, Department_ID, Manager_ID) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
 
     if ($sql === false) {
         die("Error preparing query: " . $conn->error);
     }
 
-    // Default password (should be hashed in production)
-    $default_password = password_hash("password123", PASSWORD_BCRYPT);
-    
     // Bind parameters
-    $sql->bind_param("sssssssssssssssdss", $employee_id, $default_password, $employee_type, $first_name, $last_name, $dob, $gender, $address, $contact_no, $email, $qualification, $insurance, $blood_type, $marital_status, $hire_date, $salary, $department_id, $manager_id);
+    $sql->bind_param("sssssssssssssssdss", 
+        $employee_id, $password, $employee_type, $first_name, $last_name, $dob, $gender, 
+        $address, $contact_no, $email, $qualification, $insurance, $blood_type, $marital_status, 
+        $hire_date, $salary, $department_id, $manager_id
+    );
 
     // Execute the query
     if ($sql->execute()) {
-        echo "Employee added successfully!";
+        echo "<script>alert('Employee added successfully!'); window.location.href='add_employee.php';</script>";
     } else {
         echo "Error: " . $sql->error;
     }
@@ -107,6 +115,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <label for="email">Email:</label>
                 <input type="email" id="email" name="email" required>
 
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+
                 <label for="qualification">Qualification:</label>
                 <input type="text" id="qualification" name="qualification">
 
@@ -127,7 +138,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </select>
 
                 <label for="marital_status">Marital Status:</label>
-                <select id="marital_status" name="marital_status" required>
+                <select id="marital_status" name="marital_status">
                     <option value="Single">Single</option>
                     <option value="Married">Married</option>
                     <option value="Divorced">Divorced</option>
@@ -150,7 +161,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 <label for="employee_type">Employee Type:</label>
                 <select id="employee_type" name="employee_type" required>
-                    <option value="">Select Type</option>
                     <option value="HumanResource Manager">Human Resource Manager</option>
                     <option value="Employee">Employee</option>
                 </select>

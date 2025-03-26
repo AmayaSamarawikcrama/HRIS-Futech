@@ -139,6 +139,13 @@ CREATE TABLE Employee (
 
 ALTER TABLE Employee ADD COLUMN Password VARCHAR(255) NOT NULL;
 
+ALTER TABLE Employee MODIFY Employee_ID VARCHAR(10) NOT NULL;
+
+ALTER TABLE Employee ADD COLUMN Employee_Type ENUM('HumanResource Manager', 'Employee') NOT NULL;
+
+ALTER TABLE Employee ADD COLUMN Employee_Type VARCHAR(50) NOT NULL;
+
+
 
 -- Create a sequence table to track the auto-increment value for Employee_ID
 CREATE TABLE Employee_ID_Sequence (
