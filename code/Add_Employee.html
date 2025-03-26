@@ -1,0 +1,145 @@
+<?php
+// Database connection
+$conn = new mysqli("localhost", "root", "", "hris_db");
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Handling form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Get form data
+    $first_name = $_POST['first_name'];
+    $last_name = $_POST['last_name'];
+    $dob = $_POST['dob'];
+    $gender = $_POST['gender'];
+    $address = $_POST['address'];
+    $contact_no = isset($_POST['contact_no']) ? $_POST['contact_no'] : NULL;  // Ensure contact_no is set
+    $email = $_POST['email'];
+    $marital_status = $_POST['marital_status'];
+    $qualification = $_POST['qualification'];
+    $experience = $_POST['experience'];
+    $blood_type = $_POST['blood_type'];
+    $insurance = $_POST['insurance'];
+    $joining_date = $_POST['joining_date'];
+    $leave_balance = $_POST['leave_balance'];
+    $department_id = $_POST['department_id'];
+    $manager_id = $_POST['manager_id'];
+    $job_type = $_POST['job_type'];
+
+    // Auto-generate Emp_ID (example: E001, E002, ...)
+    $result = $conn->query("SELECT MAX(Emp_ID) AS max_emp_id FROM Employee");
+    $row = $result->fetch_assoc();
+    $max_emp_id = $row['max_emp_id'];
+    $emp_id = 'E' . str_pad(substr($max_emp_id, 1) + 1, 3, '0', STR_PAD_LEFT);
+
+    // Prepare SQL query to insert employee data
+    $sql = $conn->prepare("INSERT INTO Employee 
+        (Emp_ID, First_Name, Last_Name, DOB, Gender, Address, Contact_No, Email, Marital_Status, Qualification, 
+        Experience, Blood_Type, Insurance, Joining_Date, Leave_Balance, Department_ID, Manager_ID, Job_Type) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+    if ($sql === false) {
+        die("Error preparing query: " . $conn->error);
+    }
+
+    // Bind parameters
+    $sql->bind_param("ssssssssssssssssss", $emp_id, $first_name, $last_name, $dob, $gender, $address, $contact_no, $email, $marital_status, $qualification, $experience, $blood_type, $insurance, $joining_date, $leave_balance, $department_id, $manager_id, $job_type);
+
+    // Execute the query
+    if ($sql->execute()) {
+        echo "Employee added successfully!";
+    } else {
+        echo "Error: " . $sql->error;
+    }
+
+    // Close the statement and connection
+    $sql->close();
+    $conn->close();
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Employee</title>
+    <link rel="stylesheet" href="Add_Employee.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Add New Employee</h2>
+        <form method="post">
+            <div class="left">
+                <label for="first_name">First Name:</label>
+                <input type="text" id="first_name" name="first_name" required>
+
+                <label for="last_name">Last Name:</label>
+                <input type="text" id="last_name" name="last_name" required>
+
+                <label for="dob">Date of Birth:</label>
+                <input type="date" id="dob" name="dob" required>
+
+                <label for="gender">Gender:</label>
+                <select id="gender" name="gender" required>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+
+                <label for="address">Address:</label>
+                <textarea id="address" name="address"></textarea>
+
+                <label for="contact_no">Contact Number:</label>
+                <input type="text" id="contact_no" name="contact_no" pattern="[0-9]{10,15}" placeholder="Enter 10-15 digits">
+            </div>
+
+            <div class="right">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+
+                <label for="qualification">Qualification:</label>
+                <input type="text" id="qualification" name="qualification">
+
+                <label for="insurance">Insurance:</label>
+                <input type="text" id="insurance" name="insurance">
+
+                <label for="blood_type">Blood Type:</label>
+                <select id="blood_type" name="blood_type">
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                </select>
+
+                <label for="hire_date">Hire Date:</label>
+                <input type="date" id="hire_date" name="hire_date" required>
+
+                <label for="salary">Salary:</label>
+                <input type="number" id="salary" name="salary" min="0" required>
+            </div>
+
+            <div class="full">
+                <label for="department_id">Department:</label>
+                <input type="number" id="department_id" name="department_id" required>
+
+                <label for="manager_id">Manager ID:</label>
+                <input type="text" id="manager_id" name="manager_id">
+
+                <label for="employee_type">Employee Type:</label>
+                <select id="employee_type" name="employee_type" required>
+                    <option value="HumanResource Manager">HumanResource Manager</option>
+                    <option value="Employee">Employee</option>
+                </select>
+            </div>
+
+            <input type="submit" class="submit" value="Add Employee">
+        </form>
+    </div>
+</body>
+</html>
