@@ -1,3 +1,4 @@
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -5,12 +6,20 @@ body {
     background-color: #f4f4f4;
 }
 
+
 .navbar {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    background-color: #f4f4f4;
-    background-color: #fefeff;
-    padding: 15px;
+    background-color: #ffffff;
+    padding: 15px 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    
+}
+
+.menu-icon {
+    font-size: 30px;
+    cursor: pointer;
 }
 
 .logout-btn {
@@ -20,23 +29,23 @@ body {
     cursor: pointer;
     border-radius: 5px;
     color: white;
+    font-size: 16px;
+    margin-left: 85%;
 }
 
-.menu-icon {
-    font-size: 30px;
-    cursor: pointer;
+.profile {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
 }
 
-.logout-btn {
-    margin-left: 80%;
-    font-size: normal;
-}
 
 h2 {
     text-align: left;
     margin: 20px 0;
     color: navy;
 }
+
 
 .table-container {
     background: #fff;
@@ -65,7 +74,7 @@ td, th {
     white-space: nowrap;
 }
 
-img {
+td img {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -74,12 +83,14 @@ img {
 
 @media (max-width: 768px) {
     .navbar {
-        flex-direction: row;
-        justify-content: space-between;
         padding: 10px;
     }
 
-    .menu-btn, .logout-btn {
+    .menu-icon {
+        font-size: 24px;
+    }
+
+    .logout-btn {
         padding: 8px 12px;
         font-size: 14px;
     }
@@ -90,5 +101,7 @@ img {
 
     table {
         min-width: 100%;
+        display: block;
+        overflow-x: auto;
     }
 }

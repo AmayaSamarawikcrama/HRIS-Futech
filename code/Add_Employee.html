@@ -69,6 +69,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="stylesheet" href="Add_Employee.css">
 </head>
 <body>
+    <nav class="navbar">
+        <div class="menu-icon">&#9776;</div>
+        <button class="logout-btn">Log Out</button>
+        <img class="profile" src="assets/profile.png" alt="Profile">
+    </nav>
     <div class="container">
         <h2>Add New Employee</h2>
         <form method="post">
@@ -128,7 +133,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <label for="department_id">Department:</label>
                 <input type="number" id="department_id" name="department_id" required>
 
-                <label for="manager_id">Manager ID:</label>
+                <label for="manager_id">Employee ID:</label>
                 <input type="text" id="manager_id" name="manager_id">
 
                 <label for="employee_type">Employee Type:</label>
