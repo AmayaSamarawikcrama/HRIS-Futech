@@ -1,94 +1,61 @@
 <?php
 session_start();
-include 'db_connection.php'; 
+// Database connection
+$host = 'localhost';
+$dbname = 'hris_db';
+$username = 'root';
+$password = '';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") 
-{
-    $username = trim($_POST["username"]);
-    $password = trim($_POST["password"]);
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    die("ERROR: Could not connect. " . $e->getMessage());
+}
 
-    $conn = new mysqli($servername, $db_username, $db_password, $dbname);
+// Login Processing
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $employee_id = trim($_POST['username']);
+    $input_password = trim($_POST['password']);
 
-    if ($conn->connect_error) 
-    {
-        die("Connection failed: " . $conn->connect_error);
-    }
+    // Debug: Print entered credentials
+    error_log("Login Attempt - Employee ID: $employee_id");
 
-    if (isset($_COOKIE['auto_login_token']) && isset($_COOKIE['last_login_time']) && (time() - $_COOKIE['last_login_time']) <= 300) {
-        $token = $_COOKIE['auto_login_token'];
-    
-        $stmt = $conn->prepare("SELECT Employee_ID, Password FROM Employee WHERE Token = ?");
-        if (!$stmt) {
-            die("Prepare failed: " . $conn->error);
-        }
-    
-        $stmt->bind_param("s", $token);
+    try {
+        // Prepare SQL to prevent SQL injection
+        $stmt = $pdo->prepare("SELECT * FROM Employee WHERE Employee_ID = :employee_id");
+        $stmt->bindParam(':employee_id', $employee_id);
         $stmt->execute();
-        $result = $stmt->get_result();
-    
-        if ($result && $result->num_rows > 0) 
-        {
-            $user_data = $result->fetch_assoc();
-            $_SESSION['user_id'] = $user_data['Employee_ID'];
-            redirectToDashboard($user_data['Employee_ID']);
-        }
-    }
-    
-    // Handle login form submission
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $username = trim($_POST['username']); // Emp_ID
-        $password = trim($_POST['password']);
-    
-        if (!empty($username) && !empty($password)) {
-            $stmt = $conn->prepare("SELECT Employee_ID, Password FROM Employee WHERE Employee_ID = ?");
-            if (!$stmt) {
-                die("Prepare failed: " . $conn->error);
-            }
-    
-            $stmt->bind_param("s", $username);
-            $stmt->execute();
-            $result = $stmt->get_result();
-    
-            if ($result && $result->num_rows > 0) {
-                $user_data = $result->fetch_assoc();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Debug: Check if user exists
+        if (!$user) {
+            error_log("No user found with Employee ID: $employee_id");
+            $error = "Invalid Employee ID";
+        } else {
+            // Debug: Print stored password details
+            error_log("Stored Password Hash: " . $user['Password']);
+            
+            // Note: Direct comparison instead of password_verify
+            if ($input_password === $user['Password']) {
+                // Login successful
+                $_SESSION['user_id'] = $user['Employee_ID'];
+                $_SESSION['user_role'] = $user['Job_Role'];
                 
-                // Verify hashed password
-                if (password_verify($password, $user_data['Password'])) {
-                    $_SESSION['user_id'] = $user_data['Employee_ID'];
-    
-                    // Generate and store token for auto-login
-                    $token = bin2hex(random_bytes(16));
-                    $update_stmt = $conn->prepare("UPDATE Employee SET Token = ? WHERE Employee_ID = ?");
-                    if ($update_stmt) {
-                        $update_stmt->bind_param("ss", $token, $user_data['Employee_ID']);
-                        $update_stmt->execute();
-                    }
-    
-                    setcookie('auto_login_token', $token, time() + 300, "/");
-                    setcookie('last_login_time', time(), time() + 300, "/");
-    
-                    redirectToDashboard($username);
-                } else {
-                    $error = "Invalid username or password.";
-                }
+                // Redirect based on user role
+                header("Location: dash.php");
+                exit();
             } else {
-                $error = "Invalid username or password.";
+                error_log("Password mismatch for Employee ID: $employee_id");
+                $error = "Invalid Password";
             }
         }
-    }
-    
-    function redirectToDashboard($username)
-    {
-        if (strpos($username, 'E') === 0) {
-            header("Location: Dash.php");
-        } elseif (strpos($username, 'M') === 0 || strpos($username, 'H') === 0) {
-            header("Location: hr_Dashboard.php");
-        }
-        exit;
+    } catch(PDOException $e) {
+        error_log("Database Error: " . $e->getMessage());
+        $error = "Database error occurred";
     }
 }
-    ?>
-    
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -104,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
             <div class="logo-container">
                 <img src="assets/logo.png" alt="Logo" class="logo" style="width: 80px; height: auto;">
             </div>
-            <form action="login.php" method="post">
+            <form action="" method="post">
                 <div class="input-group">
                     <div class="input-icon user-icon"></div>
                     <input id="username" type="text" name="username" placeholder="Username" class="input-field" required>
@@ -121,7 +88,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST")
                     <a href="#" class="forgot-password">Forgot Password?</a>
                 </div>
                 <button type="submit" class="login-submit">LOGIN</button>
-                </form>
+            </form>
+            
+            <?php
+            // Display error if there's any login issue
+            if (isset($error)) {
+                echo "<p style='color:red; text-align:center;'>$error</p>";
+            }
+            ?>
         </div>
     </div>
 </body>
