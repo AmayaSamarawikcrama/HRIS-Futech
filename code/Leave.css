@@ -1,3 +1,4 @@
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -5,28 +6,37 @@ body {
     background-color: #f8f9fa;
 }
 
+
 nav {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 15px 20px;
     background-color: #f7f8f9;
 }
 
 .logout-btn {
-        background-color: navy;
-        color: white;
-        border: none;
-        padding: 8px 15px;
-        cursor: pointer;
-        border-radius: 5px;
-        font-size: normal;
-        margin-left: 90%;
+    background-color: navy;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    margin-left: 85%;
 }
+.logout-btn:hover {
+    background-color: rgb(21, 21, 70);
+}
+
+
 .menu-icon {
     font-size: 30px;
     cursor: pointer;
     color: navy;
 }
+
 
 .container {
     width: 80%;
@@ -34,9 +44,11 @@ nav {
     text-align: left;
 }
 
+
 h2 {
-    color:navy;
+    color: navy;
 }
+
 
 table {
     width: 100%;
@@ -48,37 +60,108 @@ table th, table td {
     padding: 15px;
     text-align: left;
     border-bottom: 1px solid navy;
-
 }
+
 th {
     background-color: navy;
     color: white;
 }
 
-thead {
-    background-color: navy;
-}
 
 .profile {
     display: flex;
     align-items: center;
 }
 
-.image{
+.image {
     width: 40px;
     height: 40px;
 }
 
-.accept-btn {
-    background-color: navy;
-    color: white;
+
+.action {
+    padding: 8px 12px;
     border: none;
-    padding: 10px 10px;
-    cursor: pointer;
     border-radius: 5px;
+    cursor: pointer;
     font-weight: bold;
+    margin: 2px;
 }
 
-.accept-btn:hover {
-    background-color: #12203f;
+
+.action:hover {
+    opacity: 0.8;
+    background-color: navy;
+}
+
+
+.action:nth-child(1) {
+    background-color: green;
+    
+}
+
+.action:nth-child(2) {
+    background-color: red;
+ 
+}
+
+.action:nth-child(3) {
+    background-color: yellow;
+    
+} 
+@media (max-width: 768px) {
+    nav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .logout-btn {
+        margin-left: 0;
+        margin-top: 10px;
+        align-self: flex-end;
+    }
+
+    .container {
+        width: 95%;
+        margin: 10px auto;
+    }
+
+    table th, table td {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .menu-icon {
+        font-size: 24px;
+    }
+
+    .action {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    nav {
+        padding: 10px;
+    }
+
+    .logout-btn {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    table th, table td {
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    .action {
+        font-size: 10px;
+        padding: 4px 8px;
+    }
 }
