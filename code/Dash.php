@@ -87,7 +87,7 @@ $conn->close();
                 <div class="button">Related Projects</div>
                 <div class="button">My Salary Status</div>
                 <div class="button">Company Details</div>
-                <div class="button">Leave Request</div>
+                <div class="button" onclick="leaveRequest()">Leave Request</div>
                 <div class="button">My Attendance</div>
                 <div class="button">Calendar</div>
             </div>
@@ -101,6 +101,9 @@ $conn->close();
 
         function EmpProfile() {
             window.location.href = "EmpProfile.php";
+        }
+        function leaveRequest() {
+            window.location.href = "EmplLeave.php";
         }
     </script>
 </body>
