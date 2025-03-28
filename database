@@ -796,3 +796,6 @@ CREATE TABLE Payroll (
 
 USE hris_db;
 ALTER TABLE employee ADD COLUMN Status VARCHAR(20) DEFAULT 'Active';
+
+ALTER TABLE Employee 
+MODIFY COLUMN Employee_Type ENUM('HumanResource Manager', 'Employee', 'Manager') NOT NULL;
