@@ -40,6 +40,7 @@ $stmt->close();
 $conn->close();
 ?>
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,49 +48,48 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dash</title>
     <link rel="stylesheet" href="Dash.css">
+    <style>
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #f4f4f4;
+        }
+        .employee-name {
+            margin-left: auto;
+            padding-right: 20px;
+            font-weight: bold;
+            color: red;
+        }
+    </style>
 </head>
 <body>
     <div class="header">
-        <button onclick="logout()" class="logout-button">Log Out</button>
-        <img class="profile" src="assets/image.png" alt="Employee Details" width="40px" height="40px">
-        <span class="employee-name">
-            <?php 
-                // Display the logged-in user's full name
-                echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']);
-            ?>
-        </span>
+        <div class="profile-container">
+            <img class="profile" src="assets/image.png" alt="Employee Details" width="40px" height="40px">
+            <span class="employee-name">
+                <?php 
+                    // Display the logged-in user's full name
+                    echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']);
+                ?>
+            </span>
+            <button onclick="logout()" class="logout-button">Log Out</button>
+        </div>
     </div>
 
     <div class="dashboard">
         <div class="card">
             <div class="grid">
-                <div class="button" onclick="EmpProfile()">
-                    My Profile
-                </div>
-                <div class="button">
-                    My Performance
-                </div>
-                <div class="button">
-                    Reports
-                </div>
-                <div class="button">
-                    Related Projects
-                </div>
-                <div class="button">
-                    My Salary Status
-                </div>
-                <div class="button">
-                    Company Details
-                </div>
-                <div class="button">
-                    Leave Request
-                </div>
-                <div class="button">
-                    My Attendance
-                </div>
-                <div class="button">
-                    Calendar
-                </div>
+                <div class="button" onclick="EmpProfile()">My Profile</div>
+                <div class="button">My Performance</div>
+                <div class="button">Reports</div>
+                <div class="button">Related Projects</div>
+                <div class="button">My Salary Status</div>
+                <div class="button">Company Details</div>
+                <div class="button">Leave Request</div>
+                <div class="button">My Attendance</div>
+                <div class="button">Calendar</div>
             </div>
         </div>
     </div>
