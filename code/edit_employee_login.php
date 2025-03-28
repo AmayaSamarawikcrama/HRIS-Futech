@@ -1,4 +1,69 @@
+<?php
+session_start();
 
+// Database connection
+$host = 'localhost';
+$dbname = 'hris_db';
+$username = 'root';
+$password = '';
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    die("ERROR: Could not connect. " . $e->getMessage());
+}
+
+// Login Processing
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $employee_id = trim($_POST['username']);
+    $input_password = trim($_POST['password']);
+
+    // Debug: Print entered credentials
+    error_log("Login Attempt - Employee ID: $employee_id");
+
+    try {
+        // Prepare SQL to prevent SQL injection
+        $stmt = $pdo->prepare("SELECT * FROM Employee WHERE Employee_ID = :employee_id");
+        $stmt->bindParam(':employee_id', $employee_id);
+        $stmt->execute();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Debug: Check if user exists
+        if (!$user) {
+            error_log("No user found with Employee ID: $employee_id");
+            $error = "Invalid Employee ID";
+        } else {
+            // Debug: Print stored password details
+            error_log("Stored Password Hash: " . $user['Password']);
+
+            // Note: Direct comparison instead of password_verify
+            if ($input_password === $user['Password']) {
+                // Login successful
+                $_SESSION['user_id'] = $user['Employee_ID'];
+                $_SESSION['user_role'] = $user['Job_Role'];
+
+                // Conditional Redirection based on username prefix
+                if (strpos($employee_id, 'MN') === 0) {
+                    // If username starts with 'EMP', redirect to dash.php
+                    header("Location: dash.php");
+                    exit();
+                 else 
+                {
+                    // Default redirection if no specific prefix matches
+                    exit();
+                }
+            } else {
+                error_log("Password mismatch for Employee ID: $employee_id");
+                $error = "Invalid Password";
+            }
+        }
+    } catch(PDOException $e) {
+        error_log("Database Error: " . $e->getMessage());
+        $error = "Database error occurred";
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
