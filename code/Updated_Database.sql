@@ -139,6 +139,21 @@ CREATE TABLE Employee (
 
 ALTER TABLE Employee ADD COLUMN Password VARCHAR(255) NOT NULL;
 
+
+
+
+
+
+ALTER TABLE Employee ADD COLUMN file_name VARCHAR(255) NOT NULL; 
+ALTER TABLE Employee ADD uploaded_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP; 
+
+
+
+
+
+
+
+
 ALTER TABLE Employee MODIFY Employee_ID VARCHAR(10) NOT NULL;
 
 ALTER TABLE Employee ADD COLUMN Employee_Type ENUM('HumanResource Manager', 'Employee') NOT NULL;
