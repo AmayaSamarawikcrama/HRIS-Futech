@@ -1,5 +1,6 @@
 <?php
 session_start();
+
 // Database connection
 $host = 'localhost';
 $dbname = 'hris_db';
@@ -35,16 +36,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
             // Debug: Print stored password details
             error_log("Stored Password Hash: " . $user['Password']);
-            
+
             // Note: Direct comparison instead of password_verify
             if ($input_password === $user['Password']) {
                 // Login successful
                 $_SESSION['user_id'] = $user['Employee_ID'];
                 $_SESSION['user_role'] = $user['Job_Role'];
-                
-                // Redirect based on user role
-                header("Location: dash.php");
-                exit();
+
+                // Conditional Redirection based on username prefix
+                if (strpos($employee_id, 'EMP') === 0) {
+                    // If username starts with 'EMP', redirect to dash.php
+                    header("Location: dash.php");
+                    exit();
+                } elseif (strpos($employee_id, 'HM') === 0) {
+                    // If username starts with 'HM', redirect to hm_dash.php
+                    header("Location: hr_Dashboard.php");
+                    exit();
+                }
+                else if(strpos($employee_id, 'MN') === 0)
+                {
+                    header("Location: hr_Dashboard.php");
+                    exit();
+                }
+                 else 
+                {
+                    // Default redirection if no specific prefix matches
+                    exit();
+                }
             } else {
                 error_log("Password mismatch for Employee ID: $employee_id");
                 $error = "Invalid Password";
@@ -89,7 +107,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <button type="submit" class="login-submit">LOGIN</button>
             </form>
-            
+
             <?php
             // Display error if there's any login issue
             if (isset($error)) {
