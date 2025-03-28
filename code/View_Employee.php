@@ -1,6 +1,5 @@
 <?php
 // Database connection configuration
-// IMPORTANT: Use your actual XAMPP database credentials
 $servername = "localhost";
 $username = "root";  // Default XAMPP MySQL username
 $password = "";      // Default XAMPP MySQL password (usually blank)
@@ -11,7 +10,6 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection
 if ($conn->connect_error) {
-    // Detailed error logging
     error_log("Database Connection Failed: " . $conn->connect_error);
     die("Connection failed. Please check your database settings. " . $conn->connect_error);
 }
@@ -32,7 +30,8 @@ $sql = "SELECT
             e.Qualification, 
             e.Insurance, 
             e.Blood_Type, 
-            e.Salary
+            e.Salary, 
+            e.Status
         FROM 
             Employee e
         LEFT JOIN 
@@ -42,7 +41,6 @@ $sql = "SELECT
 
 $result = $conn->query($sql);
 
-// Check if query was successful
 if ($result === false) {
     error_log("Query Failed: " . $conn->error);
     die("Error executing query: " . $conn->error);
@@ -56,6 +54,22 @@ if ($result === false) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Details</title>
     <link rel="stylesheet" href="View_Employee.css">
+    <style>
+        .edit-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.3s;
+            border: none;
+        }
+        .edit-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -85,6 +99,8 @@ if ($result === false) {
                     <th>Insurance</th>
                     <th>Blood Type</th>
                     <th>Salary</th>
+                    <th>Status</th>
+                    <th>Edit</th>
                 </tr>
             </thead>
             <tbody id="employeeTable">
@@ -107,10 +123,12 @@ if ($result === false) {
                         echo "<td>" . htmlspecialchars($row['Insurance']) . "</td>";
                         echo "<td>" . htmlspecialchars($row['Blood_Type']) . "</td>";
                         echo "<td>$" . number_format($row['Salary'], 2) . "</td>";
+                        echo "<td>" . htmlspecialchars($row['Status']) . "</td>";
+                        echo "<td><a href='edit_employee.php?id=" . $row['Employee_ID'] . "' class='edit-btn'>Edit</a></td>";
                         echo "</tr>";
                     }
                 } else {
-                    echo "<tr><td colspan='15'>No employees found</td></tr>";
+                    echo "<tr><td colspan='17'>No employees found</td></tr>";
                 }
                 ?>
             </tbody>
