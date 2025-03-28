@@ -793,3 +793,6 @@ CREATE TABLE Payroll (
     Payment_Date DATE NOT NULL,
     FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID) ON DELETE CASCADE
 );
+
+USE hris_db;
+ALTER TABLE employee ADD COLUMN Status VARCHAR(20) DEFAULT 'Active';
