@@ -8,7 +8,7 @@ if ($conn->connect_error) {
 }
 
 // Handling form submission
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["image"])) {
     // Sanitize and validate input
     $first_name = trim($_POST['first_name']);
     $last_name = trim($_POST['last_name']);
@@ -39,21 +39,53 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $max_id = $row['max_id'] ? $row['max_id'] + 1 : 1;
     $employee_id = $prefix . str_pad($max_id, 4, '0', STR_PAD_LEFT);
 
+<<<<<<< HEAD
     // Prepare SQL query (Removed Manager_ID from the query)
     $sql = $conn->prepare("INSERT INTO Employee 
     (Employee_ID, Password, Employee_Type, First_Name, Last_Name, Date_of_Birth, Gender, Address, Contact_Number, Email, Qualification, 
     Insurance, Blood_Type, Marital_Status, Hire_Date, Salary, Department_ID) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+=======
+    // Handle image upload
+    $targetDir = "uploads/";  // Directory to store images
+    $fileName = basename($_FILES["image"]["name"]);
+    $targetFilePath = $targetDir . $fileName;
+    $fileType = strtolower(pathinfo($targetFilePath, PATHINFO_EXTENSION));
+
+    // Allowed file formats
+    $allowedTypes = ["jpg", "jpeg", "png", "gif", "webp"];
+    if (!in_array($fileType, $allowedTypes)) {
+        die("Only JPG, JPEG, PNG, GIF, and WEBP files are allowed.");
+    }
+
+    if (!move_uploaded_file($_FILES["image"]["tmp_name"], $targetFilePath)) {
+        die("Failed to upload the image.");
+    }
+
+    // Prepare SQL query
+    $sql = $conn->prepare("INSERT INTO Employee 
+    (Employee_ID, Password, Employee_Type, First_Name, Last_Name, Date_of_Birth, Gender, Address, Contact_Number, Email, Qualification, 
+    Insurance, Blood_Type, Marital_Status, Hire_Date, Salary, Department_ID, Manager_ID, file_name) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+>>>>>>> fa25ae0a7123ef1cdfd7d69c9a1a75535bb8a0b3
 
     if ($sql === false) {
         die("Error preparing query: " . $conn->error);
     }
 
+<<<<<<< HEAD
     // Bind parameters (Removed Manager_ID from bind_param)
     $sql->bind_param("sssssssssssssssds", 
         $employee_id, $password, $employee_type, $first_name, $last_name, $dob, $gender, 
         $address, $contact_no, $email, $qualification, $insurance, $blood_type, $marital_status, 
         $hire_date, $salary, $department_id
+=======
+    // Bind parameters
+    $sql->bind_param("sssssssssssssssdsss", 
+        $employee_id, $password, $employee_type, $first_name, $last_name, $dob, $gender, 
+        $address, $contact_no, $email, $qualification, $insurance, $blood_type, $marital_status, 
+        $hire_date, $salary, $department_id, $manager_id, $fileName
+>>>>>>> fa25ae0a7123ef1cdfd7d69c9a1a75535bb8a0b3
     );
 
     // Execute the query
@@ -68,6 +100,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $conn->close();
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -85,7 +118,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </nav>
     <div class="container">
         <h2>Add New Employee</h2>
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             <div class="left">
                 <label for="first_name">First Name:</label>
                 <input type="text" id="first_name" name="first_name" required>
@@ -107,6 +140,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 <label for="contact_no">Contact Number:</label>
                 <input type="text" id="contact_no" name="contact_no" pattern="[0-9]{10,15}" placeholder="Enter 10-15 digits">
+
+                <label for="Profile_pic">Enter Your Picture:</label>
+                <input type="file" name="image" required/>
+
             </div>
 
             <div class="right">
