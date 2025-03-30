@@ -21,7 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     error_log("Login Attempt - Employee ID: $employee_id");
 
     try {
-        // Prepare SQL to prevent SQL injection
+        // Prepare SQL to prevent SQL injection                  
         $stmt = $pdo->prepare("SELECT * FROM Employee WHERE Employee_ID = :employee_id");
         $stmt->bindParam(':employee_id', $employee_id);
         $stmt->execute();
