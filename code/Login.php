@@ -14,12 +14,10 @@ try {
     die("ERROR: Could not connect. " . $e->getMessage());
 }
 
-// Login Processing
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $employee_id = trim($_POST['username']);
     $input_password = trim($_POST['password']);
 
-    // Debug: Print entered credentials
     error_log("Login Attempt - Employee ID: $employee_id");
 
     try {
