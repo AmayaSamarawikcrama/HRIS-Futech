@@ -40,13 +40,12 @@ $stmt->close();
 $conn->close();
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dash</title>
+    <title>Dashboard</title>
     <link rel="stylesheet" href="Dash.css">
     <style>
         nav {
@@ -70,7 +69,6 @@ $conn->close();
             <img class="profile" src="assets/image.png" alt="Employee Details" width="40px" height="40px">
             <span class="employee-name">
                 <?php 
-                    // Display the logged-in user's full name
                     echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']);
                 ?>
             </span>
@@ -81,13 +79,13 @@ $conn->close();
     <div class="dashboard">
         <div class="card">
             <div class="grid">
-                <div class="button" onclick="EmpProfile()">My Profile</div>
+                <div class="button" onclick="navigate('EmpProfile.php')">My Profile</div>
                 <div class="button">My Performance</div>
                 <div class="button">Reports</div>
                 <div class="button">Related Projects</div>
                 <div class="button">My Salary Status</div>
                 <div class="button">Company Details</div>
-                <div class="button" onclick="leaveRequest()">Leave Request</div>
+                <div class="button" onclick="navigate('EmplLeave.php')">Leave Request</div>
                 <div class="button">My Attendance</div>
                 <div class="button">Calendar</div>
             </div>
@@ -99,11 +97,8 @@ $conn->close();
             window.location.href = "logout.php";
         }
 
-        function EmpProfile() {
-            window.location.href = "EmpProfile.php";
-        }
-        function leaveRequest() {
-            window.location.href = "EmplLeave.php";
+        function navigate(page) {
+            window.location.href = page;
         }
     </script>
 </body>
