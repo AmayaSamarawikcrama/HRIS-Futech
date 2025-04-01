@@ -48,6 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     // If username starts with 'EMP', redirect to dash.php
                     header("Location: dash.php");
                     exit();
+                }
                  else 
                 {
                     // Default redirection if no specific prefix matches

@@ -124,7 +124,9 @@ if ($result === false) {
                         echo "<td>" . htmlspecialchars($row['Blood_Type']) . "</td>";
                         echo "<td>$" . number_format($row['Salary'], 2) . "</td>";
                         echo "<td>" . htmlspecialchars($row['Status']) . "</td>";
-                        echo "<td><a href='edit_employee.php?id=" . $row['Employee_ID'] . "' class='edit-btn'>Edit</a></td>";
+                        echo "<td><a href='edit_employee_login.php?id=" . $row['Employee_ID'] . "' class='edit-btn'>Edit</a></td>";
+
+                        
                         echo "</tr>";
                     }
                 } else {

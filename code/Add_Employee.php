@@ -22,7 +22,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["image"])) {
     $hire_date = $_POST['hire_date'];
     $salary = $_POST['salary'];
     $department_id = $_POST['department_id'];
-    $manager_id = !empty($_POST['manager_id']) ? $_POST['manager_id'] : NULL;
     $employee_type = $_POST['employee_type'];
     $blood_type = !empty($_POST['blood_type']) ? $_POST['blood_type'] : NULL;
     $marital_status = !empty($_POST['marital_status']) ? $_POST['marital_status'] : 'Single';
@@ -40,6 +39,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["image"])) {
     $max_id = $row['max_id'] ? $row['max_id'] + 1 : 1;
     $employee_id = $prefix . str_pad($max_id, 4, '0', STR_PAD_LEFT);
 
+<<<<<<< HEAD
+    // Prepare SQL query (Removed Manager_ID from the query)
+    $sql = $conn->prepare("INSERT INTO Employee 
+    (Employee_ID, Password, Employee_Type, First_Name, Last_Name, Date_of_Birth, Gender, Address, Contact_Number, Email, Qualification, 
+    Insurance, Blood_Type, Marital_Status, Hire_Date, Salary, Department_ID) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+=======
     // Handle image upload
     $targetDir = "uploads/";  // Directory to store images
     $fileName = basename($_FILES["image"]["name"]);
@@ -61,16 +67,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["image"])) {
     (Employee_ID, Password, Employee_Type, First_Name, Last_Name, Date_of_Birth, Gender, Address, Contact_Number, Email, Qualification, 
     Insurance, Blood_Type, Marital_Status, Hire_Date, Salary, Department_ID, Manager_ID, file_name) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+>>>>>>> fa25ae0a7123ef1cdfd7d69c9a1a75535bb8a0b3
 
     if ($sql === false) {
         die("Error preparing query: " . $conn->error);
     }
 
+<<<<<<< HEAD
+    // Bind parameters (Removed Manager_ID from bind_param)
+    $sql->bind_param("sssssssssssssssds", 
+        $employee_id, $password, $employee_type, $first_name, $last_name, $dob, $gender, 
+        $address, $contact_no, $email, $qualification, $insurance, $blood_type, $marital_status, 
+        $hire_date, $salary, $department_id
+=======
     // Bind parameters
     $sql->bind_param("sssssssssssssssdsss", 
         $employee_id, $password, $employee_type, $first_name, $last_name, $dob, $gender, 
         $address, $contact_no, $email, $qualification, $insurance, $blood_type, $marital_status, 
         $hire_date, $salary, $department_id, $manager_id, $fileName
+>>>>>>> fa25ae0a7123ef1cdfd7d69c9a1a75535bb8a0b3
     );
 
     // Execute the query
@@ -181,6 +196,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["image"])) {
 
                 <label for="employee_type">Employee Type:</label>
                 <select id="employee_type" name="employee_type" required>
+                    <option value="Manager">Manager</option>
                     <option value="HumanResource Manager">Human Resource Manager</option>
                     <option value="Employee">Employee</option>
                 </select>
