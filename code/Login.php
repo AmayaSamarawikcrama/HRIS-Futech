@@ -15,59 +15,46 @@ try {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $employee_id = trim($_POST['username']);
+    $username = trim($_POST['username']);
     $input_password = trim($_POST['password']);
 
-    error_log("Login Attempt - Employee ID: $employee_id");
-
     try {
-        // Prepare SQL to prevent SQL injection                  
-        $stmt = $pdo->prepare("SELECT * FROM Employee WHERE Employee_ID = :employee_id");
-        $stmt->bindParam(':employee_id', $employee_id);
+        // Fetch user data from User_Account table
+        $stmt = $pdo->prepare("SELECT * FROM User_Account WHERE Username = :username");
+        $stmt->bindParam(':username', $username);
         $stmt->execute();
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Debug: Check if user exists
         if (!$user) {
-            error_log("No user found with Employee ID: $employee_id");
-            $error = "Invalid Employee ID";
+            $error = "Invalid Username";
         } else {
-            // Debug: Print stored password details
-            error_log("Stored Password Hash: " . $user['Password']);
-
-            // Note: Direct comparison instead of password_verify
-            if ($input_password === $user['Password']) {
+            // Verify password
+            if (password_verify($input_password, $user['Password'])) {
                 // Login successful
                 $_SESSION['user_id'] = $user['Employee_ID'];
-                $_SESSION['user_role'] = $user['Job_Role'];
-
-                // Conditional Redirection based on username prefix
-                if (strpos($employee_id, 'EMP') === 0) {
-                    // If username starts with 'EMP', redirect to dash.php
-                    header("Location: dash.php");
-                    exit();
-                } elseif (strpos($employee_id, 'HM') === 0) {
-                    // If username starts with 'HM', redirect to hm_dash.php
-                    header("Location: hr_Dashboard.php");
-                    exit();
+                $_SESSION['user_role'] = $user['User_Type'];
+                
+                // Role-based redirection
+                switch ($user['User_Type']) {
+                    case 'Admin':
+                        header("Location: admin_dashboard.php");
+                        break;
+                    case 'Manager':
+                        header("Location: manager_dashboard.php");
+                        break;
+                    case 'Employee':
+                        header("Location: dash.php");
+                        break;
+                    default:
+                        header("Location: index.php");
+                        break;
                 }
-                else if(strpos($employee_id, 'MN') === 0)
-                {
-                    header("Location: hr_Dashboard.php");
-                    exit();
-                }
-                 else 
-                {
-                    // Default redirection if no specific prefix matches
-                    exit();
-                }
+                exit();
             } else {
-                error_log("Password mismatch for Employee ID: $employee_id");
                 $error = "Invalid Password";
             }
         }
     } catch(PDOException $e) {
-        error_log("Database Error: " . $e->getMessage());
         $error = "Database error occurred";
     }
 }
@@ -90,11 +77,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <form action="" method="post">
                 <div class="input-group">
                     <div class="input-icon user-icon"></div>
-                    <input id="username" type="text" name="username" placeholder="Username" class="input-field" required>
+                    <input type="text" name="username" placeholder="Username" class="input-field" required>
                 </div>
                 <div class="input-group">
                     <div class="input-icon lock-icon"></div>
-                    <input id="password" type="password" name="password" placeholder="Password" class="input-field" required>
+                    <input type="password" name="password" placeholder="Password" class="input-field" required>
                 </div>
                 <div class="options">
                     <div class="remember-me">
@@ -106,12 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <button type="submit" class="login-submit">LOGIN</button>
             </form>
 
-            <?php
-            // Display error if there's any login issue
-            if (isset($error)) {
-                echo "<p style='color:red; text-align:center;'>$error</p>";
-            }
-            ?>
+            <?php if (isset($error)) { echo "<p style='color:red; text-align:center;'>$error</p>"; } ?>
         </div>
     </div>
 </body>
