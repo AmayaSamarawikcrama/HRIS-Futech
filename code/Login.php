@@ -71,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <div class="input-group">
                     <div class="input-icon lock-icon"></div>
-                    <input type="password" name="password" placeholder="Password" class="input-field" required>
+                    <input type="password" name="password" placeholder="Password." class="input-field" required>
                 </div>
                 <div class="options">
                     <div class="remember-me">
