@@ -1,10 +1,10 @@
 <?php
+// Database connection
+$conn = new mysqli("localhost", "root", "", "hris_db");
+
 // Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-
-// Database connection
-$conn = new mysqli("localhost", "root", "", "hris_db");
 
 // Check connection
 if ($conn->connect_error) {
@@ -17,6 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $start_date = $conn->real_escape_string($_POST['start_date']);
     $end_date = $conn->real_escape_string($_POST['end_date']);
     $reason = $conn->real_escape_string($_POST['reason']);
+    $duty_covering = $conn->real_escape_string($_POST['duty_covering'] ?? ''); // Added optional field
 
     // Validate form fields
     if (empty($employee_id) || empty($leave_type) || empty($start_date) || empty($end_date) || empty($reason)) {
@@ -31,25 +32,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Check if Employee_ID exists
-    $check_employee = "SELECT Employee_ID FROM Employee WHERE Employee_ID = '$employee_id'";
-    $result = $conn->query($check_employee);
+    $check_employee = "SELECT Employee_ID FROM Employee WHERE Employee_ID = ?";
+    $stmt = $conn->prepare($check_employee);
+    $stmt->bind_param("s", $employee_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
     if ($result->num_rows == 0) {
         echo "<script>alert('Invalid Employee ID!'); window.history.back();</script>";
         exit();
     }
+    $stmt->close();
 
-    // Insert data into Leave_Management
-    $sql = "INSERT INTO Leave_Management (Employee_ID, Leave_Type, Start_Date, End_Date, Leave_Reason, Approval_Status) 
-            VALUES ('$employee_id', '$leave_type', '$start_date', '$end_date', '$reason', 'Pending')";
-
-    if ($conn->query($sql) === TRUE) {
-        echo "<script>alert('Leave request submitted successfully!'); window.location.href='leave_request_page.php';</script>";
+    // Insert data into Leave_Management using prepared statement
+    $sql = "INSERT INTO Leave_Management (Employee_ID, Leave_Type, Start_Date, End_Date, Leave_Reason, Duty_Covering, Approval_Status) 
+            VALUES (?, ?, ?, ?, ?, ?, 'Pending')";
+            
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssssss", $employee_id, $leave_type, $start_date, $end_date, $reason, $duty_covering);
+    
+    if ($stmt->execute()) {
+        echo "<script>alert('Leave request submitted successfully!'); window.location.href=window.location.href;</script>";
     } else {
-        echo "<script>alert('Error: " . addslashes($conn->error) . "'); window.history.back();</script>";
+        echo "<script>alert('Error: " . addslashes($stmt->error) . "'); window.history.back();</script>";
     }
+    $stmt->close();
 }
 
-$conn->close();
+// Fetch remaining leave balance - you can uncomment and modify this if needed
+/*
+$leave_balance = 40; // Default value
+if (isset($_SESSION['employee_id'])) {
+    $emp_id = $_SESSION['employee_id'];
+    $leave_query = "SELECT COUNT(*) as used_leaves FROM Leave_Management 
+                    WHERE Employee_ID = ? AND Approval_Status = 'Approved' 
+                    AND YEAR(Start_Date) = YEAR(CURRENT_DATE())";
+    $stmt = $conn->prepare($leave_query);
+    $stmt->bind_param("s", $emp_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        $leave_balance = 40 - $row['used_leaves'];
+    }
+    $stmt->close();
+}
+*/
+
 ?>
 
 <!DOCTYPE html>
@@ -97,7 +125,7 @@ $conn->close();
         </div>
         <a href="#" class="leave-history">Leave History</a>
 
-        <form action="insert_leave_request.php" method="POST" onsubmit="return validateForm()">
+        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" onsubmit="return validateForm()">
             <label for="emp_id">Employee ID:</label>
             <input type="text" id="emp_id" name="emp_id" placeholder="Enter your Employee ID" required>
 
@@ -118,6 +146,9 @@ $conn->close();
 
             <label for="reason">Reason:</label>
             <textarea id="reason" name="reason" rows="3" required></textarea>
+
+            <label for="duty_covering">Duty Covering (Optional):</label>
+            <input type="text" id="duty_covering" name="duty_covering" placeholder="Who will cover your duties?">
 
             <button type="submit" class="submit">SUBMIT</button>
         </form>
