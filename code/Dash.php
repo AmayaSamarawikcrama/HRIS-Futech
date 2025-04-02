@@ -86,7 +86,7 @@ $conn->close();
                 <div class="button">My Salary Status</div>
                 <div class="button">Company Details</div>
                 <div class="button" onclick="navigate('EmplLeave.php')">Leave Request</div>
-                <div class="button">My Attendance</div>
+                <div class="button" onclick="location.href='EmpManualAttendance.php'">My Attendance</div>
                 <div class="button">Calendar</div>
             </div>
         </div>

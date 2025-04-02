@@ -41,10 +41,10 @@
                     }
                 </script>
                 <span class="employee-name ms-auto me-3">
-                    <?php
+                    <!-- <?php
                         // Assuming $user_data is defined and contains user information
                         echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']);
-                    ?>
+                    ?> -->
                 </span>
                 
                 <button class="btn btn-primary me-2" onclick="logout()">Log Out</button>
