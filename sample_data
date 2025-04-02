@@ -1,0 +1,130 @@
+-- Insert into Department table first
+INSERT INTO Department (Department_Name, Location) VALUES 
+('Human Resources', 'Floor 2, East Wing'),
+('Engineering', 'Floor 3, North Wing'),
+('Marketing', 'Floor 2, West Wing');
+
+-- Insert employees
+-- Note: Password should be hashed in a real system
+INSERT INTO Employee (
+    Password, 
+    Employee_Type, 
+    First_Name, 
+    Last_Name, 
+    Date_of_Birth, 
+    Gender, 
+    Address, 
+    Contact_Number, 
+    Email, 
+    Qualification, 
+    Insurance, 
+    Blood_Type, 
+    Marital_Status, 
+    Hire_Date, 
+    Salary, 
+    Department_ID,
+    file_name
+) VALUES 
+-- HR Manager
+(
+    'hashed_password123', 
+    'HumanResource Manager', 
+    'Jane', 
+    'Smith', 
+    '1985-04-15', 
+    'Female', 
+    '123 Main Street, Anytown', 
+    '555-123-4567', 
+    'jane.smith@company.com', 
+    'Masters in Human Resources Management', 
+    'Premium Health Plan', 
+    'O+', 
+    'Married', 
+    '2018-05-10', 
+    85000.00, 
+    1,
+    'jane_smith_resume.pdf'
+),
+-- Manager
+(
+    'secure_password456', 
+    'Manager', 
+    'Michael', 
+    'Johnson', 
+    '1980-08-22', 
+    'Male', 
+    '456 Oak Avenue, Anytown', 
+    '555-234-5678', 
+    'michael.johnson@company.com', 
+    'MBA, BS Computer Science', 
+    'Family Health Plan', 
+    'A-', 
+    'Married', 
+    '2017-02-15', 
+    95000.00, 
+    2,
+    'michael_johnson_resume.pdf'
+),
+-- Regular Employee
+(
+    'employee_pwd789', 
+    'Employee', 
+    'Sarah', 
+    'Williams', 
+    '1990-11-30', 
+    'Female', 
+    '789 Pine Street, Anytown', 
+    '555-345-6789', 
+    'sarah.williams@company.com', 
+    'Bachelor in Marketing', 
+    'Standard Health Plan', 
+    'B+', 
+    'Single', 
+    '2020-07-20', 
+    65000.00, 
+    3,
+    'sarah_williams_resume.pdf'
+);
+
+-- Set up Manager records
+-- We need to get the automatically generated Employee_IDs first
+-- For this example, we'll assume the IDs are HM0001, MAN0002, and EMP0003 based on the trigger
+INSERT INTO Manager (Manager_ID, Employee_ID, Department_ID) VALUES
+('MAN0002', 'MAN0002', 2);
+
+-- Update departments with managers
+UPDATE Department SET Manager_ID = 'HM0001' WHERE Department_ID = 1;
+UPDATE Department SET Manager_ID = 'MAN0002' WHERE Department_ID = 2;
+
+-- Update employee manager relationships
+UPDATE Employee SET Manager_ID = 'HM0001' WHERE Employee_ID = 'EMP0003';
+
+-- Insert Job Positions
+INSERT INTO Job_Position (Job_Title, Job_Description, Salary_Range, Job_Level) VALUES
+('HR Director', 'Oversees all HR operations and strategy', '80000-110000', 'Executive'),
+('Engineering Manager', 'Leads the engineering team and product development', '90000-120000', 'Lead'),
+('Marketing Specialist', 'Develops and executes marketing campaigns', '60000-80000', 'Mid');
+
+-- Insert Employee Performance data
+INSERT INTO Employee_Performance (Employee_ID, Performance_Rating, Strengths, Recommendations) VALUES
+('HM0001', 'Excellent', 'Strong leadership, excellent communication', 'Consider for executive training program'),
+('MAN0002', 'Good', 'Technical expertise, team management', 'Recommend additional leadership training'),
+('EMP0003', 'Good', 'Creativity, campaign development', 'Should focus on data analytics skills');
+
+-- Insert Attendance records
+INSERT INTO Attendance (Employee_ID, Date, Log_In_Time, Log_Out_Time) VALUES
+('HM0001', '2025-04-01', '08:30:00', '17:30:00'),
+('MAN0002', '2025-04-01', '08:15:00', '18:00:00'),
+('EMP0003', '2025-04-01', '09:00:00', '17:00:00');
+
+-- Insert Leave Management records
+INSERT INTO Leave_Management (Employee_ID, Leave_Type, Start_Date, End_Date, Approval_Status, Leave_Reason, Duty_Covering) VALUES
+('MAN0002', 'Annual Leave', '2025-05-10', '2025-05-15', 'Approved', 'Family vacation', 'Jane Smith will cover during absence'),
+('EMP0003', 'Sick Leave', '2025-04-15', '2025-04-16', 'Approved', 'Doctor appointment', 'Tasks postponed'),
+('HM0001', 'Casual Leave', '2025-06-01', '2025-06-02', 'Pending', 'Personal matters', 'Michael Johnson will cover HR duties');
+
+-- Insert Payroll records
+INSERT INTO Payroll (Employee_ID, Base_Salary, Deductions, Payment_Method, Payment_Date) VALUES
+('HM0001', 85000.00, 17000.00, 'Bank Transfer', '2025-03-30'),
+('MAN0002', 95000.00, 19000.00, 'Bank Transfer', '2025-03-30'),
+('EMP0003', 65000.00, 13000.00, 'Bank Transfer', '2025-03-30');
