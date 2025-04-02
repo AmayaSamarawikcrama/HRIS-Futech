@@ -507,3 +507,17 @@ CREATE TABLE Payroll (
     Payment_Date DATE NOT NULL,
     FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID) ON DELETE CASCADE
 );
+
+
+-- Event Table
+CREATE TABLE Event (
+    Event_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Event_Name VARCHAR(255) NOT NULL,
+    Event_Type ENUM('Meeting', 'Training', 'Workshop', 'Seminar', 'Conference', 'Team Building', 'Other') NOT NULL,
+    Event_Description TEXT,
+    Event_Date DATE NOT NULL,
+    Event_Time TIME NOT NULL,
+    Location VARCHAR(255),
+    Organizer VARCHAR(100),
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
