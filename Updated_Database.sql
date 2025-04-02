@@ -343,7 +343,6 @@ CREATE TABLE Payroll (
     FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID) ON DELETE CASCADE
 );
 
--- User Accounts Table
 CREATE TABLE User_Account (
     User_ID INT PRIMARY KEY AUTO_INCREMENT,
     Employee_ID VARCHAR(10) UNIQUE NOT NULL,
