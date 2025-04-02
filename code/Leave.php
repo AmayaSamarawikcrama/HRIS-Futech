@@ -149,7 +149,6 @@ $result = $conn->query($sql);
     <script>
         // Highlight the current status button
         document.addEventListener('DOMContentLoaded', function() {
-            // You can add any additional JavaScript functionality here
         });
     </script>
 </body>

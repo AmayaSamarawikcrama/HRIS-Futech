@@ -135,6 +135,12 @@ if (isset($_SESSION['employee_id'])) {
                 <option value="Sick Leave">Sick Leave</option>
                 <option value="Casual Leave">Casual Leave</option>
                 <option value="Annual Leave">Annual Leave</option>
+                <option value="Short Leave">Short Leave</option>
+                <option value="Duty Out">Duty Out</option>
+                <option value="Work From Home">Work From Home</option>
+                <option value="Special Leave">Special Leave</option>
+                <option value="Lieu Leave">Lieu Leave</option>
+                <option value="Election Leave">Election Leave</option>
                 <option value="Maternity Leave">Maternity Leave</option>
             </select>
 
