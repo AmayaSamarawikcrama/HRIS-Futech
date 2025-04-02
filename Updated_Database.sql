@@ -470,7 +470,6 @@ CREATE TABLE Attendance (
     FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID) ON DELETE CASCADE
 );
 
--- Leave Management Table
 CREATE TABLE Leave_Management (
     Leave_ID INT PRIMARY KEY AUTO_INCREMENT,
     Employee_ID VARCHAR(10) NOT NULL,
