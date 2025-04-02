@@ -497,7 +497,6 @@ END;
 //
 DELIMITER ;
 
--- Payroll Table
 CREATE TABLE Payroll (
     Payroll_ID INT PRIMARY KEY AUTO_INCREMENT,
     Employee_ID VARCHAR(10) NOT NULL,
