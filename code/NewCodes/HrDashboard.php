@@ -1,3 +1,44 @@
+<?php
+session_start();
+
+$host = 'localhost';
+$dbname = 'hris_db';
+$username = 'root';
+$password = '';
+
+
+$conn = new mysqli($host, $username, $password, $dbname);
+
+if($conn->connect_error)
+{
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// if(!isset($_SESSION['user_id']))    
+// {
+//     hedder("Location: login.php");
+//     exit();
+// }
+
+$user_id = $_SESSION['user_id'];
+
+$stmt = $conn->prepare("
+    SELECT e.*, d.Department_Name
+    FROM Employee e
+    LEFT JOIN Department d ON e.Department_ID = d.Department_ID
+    WHERE e.Employee_ID = ?
+");
+
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$user_data = $result->fetch_assoc();
+
+$stmt->close();
+$conn->close(); 
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
