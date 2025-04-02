@@ -483,7 +483,6 @@ CREATE TABLE Leave_Management (
     FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID) ON DELETE CASCADE
 );
 
--- Trigger to validate Leave dates
 DELIMITER //
 CREATE TRIGGER before_leave_insert
 BEFORE INSERT ON Leave_Management
