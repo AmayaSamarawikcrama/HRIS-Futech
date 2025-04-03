@@ -126,13 +126,15 @@ if (isset($_POST['search'])) {
         <div class="container-fluid">
             <span class="menu-icon" onclick="toggleMenu()">&#9776;</span>
             <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; nav-left: 10px; z-index: 1000;">
-                <a href="Dashboard.php" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
-                <a href="View Employee.php" class="d-block text-decoration-none text-dark mb-2">View Employee</a>
-                <a href="attendance.php" class="d-block text-decoration-none text-dark mb-2">Attendance</a>
-                <a href="Project.php" class="d-block text-decoration-none text-dark mb-2">Project</a>
-                <a href="Leave.php" class="d-block text-decoration-none text-dark mb-2">Leave</a>
-                <a href="Salary.php" class="d-block text-decoration-none text-dark mb-2">Salary</a>
-                <a href="Report.php" class="d-block text-decoration-none text-dark mb-2">Report</a>
+               <a href="EmpDashboard.html" class="dropdown-item">Dashboard</a>
+                <a href="EmpProfile.php" class="dropdown-item">My Profile</a>
+               <a href="EmplLeave.php" class="dropdown-item">Leave Request</a>
+               <a href="EmpManualAttendance.html" class="dropdown-item">My Attendance</a>
+               <a href="Performance.php" class="dropdown-item">My Performance</a>
+               <a href="Salary.php" class="dropdown-item">Salary Status</a>
+             <a href="Report.php" class="dropdown-item">Report</a>
+               <a href="Company.php" class="dropdown-item">Company Details</a>
+               <a href="Calendar.php" class="dropdown-item">Calendar</a>
             </div>
             <script>
                 function toggleMenu() {
@@ -144,17 +146,12 @@ if (isset($_POST['search'])) {
                     window.location.href = 'logout.php';
                 }
             </script>
-            <?php
-            if(isset($_SESSION['user_data'])) {
-                echo '<span class="employee-name ms-auto me-3">' . 
-                     htmlspecialchars($_SESSION['user_data']['First_Name'] . ' ' . $_SESSION['user_data']['Last_Name']) . 
-                     '</span>';
-            }
-            ?>
-            <button class="btn btn-primary me-2" onclick="logout()">Log Out</button>
+           
+            <button class="btn btn-primary me-2 ms-auto" onclick="logout()">Log Out</button>
             <img src="assets/image.png" alt="Profile Icon" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" onclick="location.href='assets/image.png'">
         </div>
     </nav>
+    
 
     <div class="container mt-4">
         <h2 class="text-center"><b>Enter Your Attendance</b></h2><br>

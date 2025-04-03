@@ -42,15 +42,9 @@
                         window.location.href = 'logout.php';
                     }
                 </script>
-                <?php
-                if(isset($_SESSION['user_data'])) {
-                    echo '<span class="employee-name ms-auto me-3">' . 
-                         htmlspecialchars($_SESSION['user_data']['First_Name'] . ' ' . $_SESSION['user_data']['Last_Name']) . 
-                         '</span>';
-                }
-                ?>
-                <button class="btn btn-primary me-2" onclick="logout()">Log Out</button>
-                <img src="assets/image.png" alt="Profile Icon" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" onclick="location.href='assets/image.png'">
+               
+               <button class="btn btn-primary me-2 ms-auto" onclick="logout()">Log Out</button>
+               <img src="assets/image.png" alt="Profile Icon" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" onclick="location.href='assets/image.png'">
             </div>
         </nav>
 
@@ -60,28 +54,28 @@
 
         <div class="row mt-4 g-2">
             <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='EmpProfile.php'">My Profile</button>
+                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='EmpProfile.html'">My Profile</button>
             </div>
             <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='EmplLeave.php'">Leave Request</button>
+                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='EmplLeave.html'">Leave Request</button>
             </div>
             <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='EmpManualAttendance.php'">My Attendance</button>
+                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='EmpManualAttendance.html'">My Attendance</button>
             </div>
             <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Performance.php'">My Performance</button>
+                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Performance.html'">My Performance</button>
             </div>
             <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Salary.php'">Salary Status</button>
+                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Salary.html'">Salary Status</button>
             </div>
             <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Report.php'">Report</button>
+                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Report.html'">Report</button>
             </div>
             <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Company.php'">Company Details</button>
+                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Company.html'">Company Details</button>
             </div>
             <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Calendar.php'">Calendar</button>
+                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Calendar.html'">Calendar</button>
             </div>
         </div>
     </div>
