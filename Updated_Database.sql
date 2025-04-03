@@ -500,13 +500,58 @@ CREATE TABLE Payroll (
     Employee_ID VARCHAR(10) NOT NULL,
     Base_Salary DECIMAL(10,2) NOT NULL CHECK (Base_Salary >= 0),
     Deductions DECIMAL(10,2) DEFAULT 0 CHECK (Deductions >= 0),
-    Net_Salary DECIMAL(10,2) GENERATED ALWAYS AS (
-        GREATEST(Base_Salary - Deductions, 0)
-    ) STORED,
+    -- Net_Salary DECIMAL(10,2) GENERATED ALWAYS AS (
+    --     GREATEST(Base_Salary - Deductions, 0)
+    -- ) STORED,
     Payment_Method ENUM('Bank Transfer', 'Cheque', 'Cash') NOT NULL,
     Payment_Date DATE NOT NULL,
     FOREIGN KEY (Employee_ID) REFERENCES Employee(Employee_ID) ON DELETE CASCADE
 );
+-- Modify Payroll Table: Add missing columns
+ALTER TABLE Payroll 
+ADD COLUMN Fixed_Allowances DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN Overtime_Pay DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN Unpaid_Leave_Deductions DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN Loan_Recovery DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN PAYE_Tax DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN Employee_EPF DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN Employer_EPF DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN Employer_ETF DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN Gross_Salary DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN Total_Deductions DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN Net_Salary DECIMAL(10,2) DEFAULT 0;
+
+-- Create a Trigger to Calculate Payroll Components
+DELIMITER //
+CREATE TRIGGER before_insert_payroll
+BEFORE INSERT ON Payroll
+FOR EACH ROW
+BEGIN
+    -- Calculate Employee EPF (8% of Base Salary)
+    SET NEW.Employee_EPF = NEW.Base_Salary * 0.08;
+    
+    -- Calculate Employer EPF (12% of Base Salary)
+    SET NEW.Employer_EPF = NEW.Base_Salary * 0.12;
+    
+    -- Calculate Employer ETF (3% of Base Salary)
+    SET NEW.Employer_ETF = NEW.Base_Salary * 0.03;
+    
+    -- Calculate Gross Salary (Base Salary + Fixed Allowances + Overtime - Unpaid Leave)
+    SET NEW.Gross_Salary = NEW.Base_Salary + NEW.Fixed_Allowances + NEW.Overtime_Pay - NEW.Unpaid_Leave_Deductions;
+    
+    -- Calculate Total Deductions (Employee EPF + PAYE Tax + Loan Recovery)
+    SET NEW.Total_Deductions = NEW.Employee_EPF + NEW.PAYE_Tax + NEW.Loan_Recovery;
+    
+    -- Calculate Net Salary (Gross Salary - Total Deductions)
+    SET NEW.Net_Salary = NEW.Gross_Salary - NEW.Total_Deductions;
+END;
+//
+DELIMITER ;
+
+
+
+
+
 
 
 -- Event Table
