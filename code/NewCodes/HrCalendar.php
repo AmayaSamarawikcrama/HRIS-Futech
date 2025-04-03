@@ -33,6 +33,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         if($conn->query($sql)) {
             $success_message = "Event added successfully!";
+            // Refresh the page to show the new event
+            header("Refresh:0");
         } else {
             $error_message = "Error adding event: " . $conn->error;
         }
@@ -44,6 +46,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         if($conn->query($sql)) {
             $success_message = "Event deleted successfully!";
+            // Refresh the page to update the calendar
+            header("Refresh:0");
         } else {
             $error_message = "Error deleting event: " . $conn->error;
         }
@@ -72,6 +76,8 @@ $user_data = ['First_Name' => 'Admin', 'Last_Name' => 'User'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HR Team Calendar</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <!-- FullCalendar CSS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
     <style>
         .profile-pic {
             width: 40px;
@@ -96,6 +102,14 @@ $user_data = ['First_Name' => 'Admin', 'Last_Name' => 'User'];
         .event-type {
             font-weight: bold;
             color: #0d6efd;
+        }
+        #calendar {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .fc-event {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -144,9 +158,7 @@ $user_data = ['First_Name' => 'Admin', 'Last_Name' => 'User'];
             
             <div class="row">
                 <div class="col-md-8">
-                    <div class="ratio ratio-16x9 mb-4">
-                        <iframe src="https://calendar.google.com/calendar/embed?src=en.usa%23holiday%40group.v.calendar.google.com&ctz=America%2FNew_York" frameborder="0" scrolling="no"></iframe>
-                    </div>
+                    <div id="calendar" class="mb-4"></div>
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-success w-100 mb-3" id="toggle-event-form-btn" onclick="toggleAddEventForm()">+ Add Event</button>
@@ -252,7 +264,70 @@ $user_data = ['First_Name' => 'Admin', 'Last_Name' => 'User'];
         </div>
     </div>
 
+    <!-- FullCalendar JS -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
     <script>
+        // Initialize FullCalendar
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: [
+                    <?php foreach($events as $event): ?>
+                    {
+                        title: '<?php echo addslashes($event['Event_Name']); ?>',
+                        start: '<?php echo $event['Event_Date'] . ($event['Event_Time'] ? 'T' . $event['Event_Time'] : ''); ?>',
+                        description: '<?php echo addslashes($event['Event_Description']); ?>',
+                        extendedProps: {
+                            type: '<?php echo addslashes($event['Event_Type']); ?>',
+                            location: '<?php echo addslashes($event['Location']); ?>',
+                            organizer: '<?php echo addslashes($event['Organizer']); ?>'
+                        },
+                        color: getEventColor('<?php echo $event['Event_Type']; ?>')
+                    },
+                    <?php endforeach; ?>
+                ],
+                eventClick: function(info) {
+                    // Display event details when clicked
+                    alert(
+                        'Event: ' + info.event.title + '\n' +
+                        'Type: ' + info.event.extendedProps.type + '\n' +
+                        'Description: ' + info.event.extendedProps.description + '\n' +
+                        'Date: ' + info.event.start.toLocaleString() + '\n' +
+                        'Location: ' + info.event.extendedProps.location + '\n' +
+                        'Organizer: ' + info.event.extendedProps.organizer
+                    );
+                }
+            });
+            calendar.render();
+            
+            // Set default date for new events to today
+            document.getElementById('event_date').valueAsDate = new Date();
+            
+            // Set default time for new events to current time + 1 hour
+            const now = new Date();
+            now.setHours(now.getHours() + 1);
+            document.getElementById('event_time').value = now.toTimeString().substring(0, 5);
+        });
+        
+        // Assign different colors based on event type
+        function getEventColor(type) {
+            switch(type) {
+                case 'Meeting': return '#3788d8';
+                case 'Training': return '#6c757d';
+                case 'Workshop': return '#20c997';
+                case 'Seminar': return '#6610f2';
+                case 'Conference': return '#fd7e14';
+                case 'Team Building': return '#dc3545';
+                default: return '#6f42c1';
+            }
+        }
+
         // Toggle event forms
         function toggleAddEventForm() {
             const form = document.getElementById('add-event-form');
