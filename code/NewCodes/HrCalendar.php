@@ -350,7 +350,7 @@ $user_data = ['First_Name' => 'Admin', 'Last_Name' => 'User'];
             if (form.classList.contains('d-none')) {
                 form.classList.remove('d-none');
                 button.textContent = '- Close Form';
-                // Hide add form if open
+
                 document.getElementById('add-event-form').classList.add('d-none');
                 document.getElementById('toggle-event-form-btn').textContent = '+ Add Event';
             } else {
