@@ -25,23 +25,18 @@
 <?php
 session_start();
 
-// Database connection
-$servername = "localhost";  // Change this if your database is on a different server
-$username = "root";         // Change to your database username
-$password = "";             // Change to y
+$servername = "localhost";
+$username = "root";
+$password = "";
 $dbname = "hris_db";
 
-// Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Process form submission
 if (isset($_POST['submit'])) {
-    // Get form data and sanitize inputs
     $employee_id = mysqli_real_escape_string($conn, $_POST['employee_id']);
     $date = mysqli_real_escape_string($conn, $_POST['date']);
     $clock_in = mysqli_real_escape_string($conn, $_POST['clock_in']);
@@ -51,10 +46,8 @@ if (isset($_POST['submit'])) {
     $task_completion = mysqli_real_escape_string($conn, $_POST['task_completion']);
     $comments = mysqli_real_escape_string($conn, $_POST['comments']);
     
-    // Validate form data
     $errors = [];
     
-    // Check if employee ID exists in Employee table
     $check_employee = $conn->prepare("SELECT Employee_ID FROM Employee WHERE Employee_ID = ?");
     $check_employee->bind_param("s", $employee_id);
     $check_employee->execute();
@@ -64,7 +57,6 @@ if (isset($_POST['submit'])) {
         $errors[] = "Employee ID does not exist";
     }
     
-    // Check if attendance record already exists for the day
     $check_attendance = $conn->prepare("SELECT Attendance_ID FROM Attendance WHERE Employee_ID = ? AND Date = ?");
     $check_attendance->bind_param("ss", $employee_id, $date);
     $check_attendance->execute();
@@ -74,7 +66,6 @@ if (isset($_POST['submit'])) {
         $errors[] = "Attendance record already exists for this date";
     }
     
-    // If there are no errors, insert the attendance record
     if (empty($errors)) {
         $query = "INSERT INTO Attendance (Employee_ID, Date, Log_In_Time, Log_Out_Time, Work_Hours, Assigned_Task, Task_Completion, Comments) 
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -92,34 +83,28 @@ if (isset($_POST['submit'])) {
         
         $stmt->close();
     } else {
-        // Set error message if validation failed
         $_SESSION['message'] = "Error: " . implode(", ", $errors);
         $_SESSION['message_type'] = "error";
     }
     
-    // Redirect to the same page to prevent form resubmission
     header("Location: ".$_SERVER['PHP_SELF']);
     exit();
 }
 
-// Variable to store searched employee ID
 $search_employee_id = "";
 $search_performed = false;
 $search_results = [];
 
-// Process search form submission
 if (isset($_POST['search'])) {
     $search_employee_id = mysqli_real_escape_string($conn, $_POST['search_employee_id']);
     $search_performed = true;
     
-    // Check if employee ID exists
     $check_employee = $conn->prepare("SELECT Employee_ID FROM Employee WHERE Employee_ID = ?");
     $check_employee->bind_param("s", $search_employee_id);
     $check_employee->execute();
     $result = $check_employee->get_result();
     
     if ($result->num_rows > 0) {
-        // Query attendance records for the searched employee
         $query = "SELECT Date, Log_In_Time, Log_Out_Time, Work_Hours, Assigned_Task, Task_Completion, Comments 
                   FROM Attendance 
                   WHERE Employee_ID = ? 
@@ -156,7 +141,6 @@ if (isset($_POST['search'])) {
                 }
                 
                 function logout() {
-                    // Clear session and redirect to login page
                     window.location.href = 'logout.php';
                 }
             </script>
@@ -172,7 +156,6 @@ if (isset($_POST['search'])) {
         </div>
     </nav>
 
-    <!-- Attendance Entry Form -->
     <div class="container mt-4">
         <h2 class="text-center"><b>Enter Your Attendance</b></h2><br>
         <?php
@@ -226,7 +209,6 @@ if (isset($_POST['search'])) {
         </form>
     </div>
 
-    <!-- Search for Employee Attendance -->
     <div class="container mt-5">
         <h2 class="text-center"><b>Search Employee Attendance</b></h2><br>
         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" class="mb-4">
@@ -278,13 +260,9 @@ if (isset($_POST['search'])) {
             </div>
         <?php endif; ?>
     </div>
-
-    <!-- Attendance Table for Current User -->
-    
 </div>
 
 <script>
-    // Calculate work hours automatically when clock out time changes
     document.querySelector('input[name="clock_out"]').addEventListener('change', function() {
         const clockIn = document.querySelector('input[name="clock_in"]').value;
         const clockOut = this.value;
@@ -292,7 +270,7 @@ if (isset($_POST['search'])) {
         if(clockIn && clockOut) {
             const start = new Date(`2000-01-01T${clockIn}`);
             const end = new Date(`2000-01-01T${clockOut}`);
-            const diff = (end - start) / (1000 * 60 * 60); // Difference in hours
+            const diff = (end - start) / (1000 * 60 * 60);
             
             if(diff > 0) {
                 document.querySelector('input[name="work_hours"]').value = diff.toFixed(2);
@@ -301,7 +279,6 @@ if (isset($_POST['search'])) {
     });
 </script>
 <?php
-// Close database connection
 $conn->close();
 ?>
 </body>
