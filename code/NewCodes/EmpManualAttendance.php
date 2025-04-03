@@ -23,13 +23,12 @@
 </head>
 <body>
 <?php
-// Start session
 session_start();
 
 // Database connection
 $servername = "localhost";  // Change this if your database is on a different server
 $username = "root";         // Change to your database username
-$password = "";             // Change to your database password
+$password = "";             // Change to y
 $dbname = "hris_db";
 
 // Create connection
@@ -101,6 +100,39 @@ if (isset($_POST['submit'])) {
     // Redirect to the same page to prevent form resubmission
     header("Location: ".$_SERVER['PHP_SELF']);
     exit();
+}
+
+// Variable to store searched employee ID
+$search_employee_id = "";
+$search_performed = false;
+$search_results = [];
+
+// Process search form submission
+if (isset($_POST['search'])) {
+    $search_employee_id = mysqli_real_escape_string($conn, $_POST['search_employee_id']);
+    $search_performed = true;
+    
+    // Check if employee ID exists
+    $check_employee = $conn->prepare("SELECT Employee_ID FROM Employee WHERE Employee_ID = ?");
+    $check_employee->bind_param("s", $search_employee_id);
+    $check_employee->execute();
+    $result = $check_employee->get_result();
+    
+    if ($result->num_rows > 0) {
+        // Query attendance records for the searched employee
+        $query = "SELECT Date, Log_In_Time, Log_Out_Time, Work_Hours, Assigned_Task, Task_Completion, Comments 
+                  FROM Attendance 
+                  WHERE Employee_ID = ? 
+                  ORDER BY Date DESC";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("s", $search_employee_id);
+        $stmt->execute();
+        $search_results = $stmt->get_result();
+        $stmt->close();
+    } else {
+        $_SESSION['message'] = "Employee ID does not exist";
+        $_SESSION['message_type'] = "error";
+    }
 }
 ?>
 
@@ -194,38 +226,39 @@ if (isset($_POST['submit'])) {
         </form>
     </div>
 
-    <!-- Attendance Table -->
-    <div class="container mt-4">
-        <h2 class="text-center"><b>My Attendance Records</b></h2><br>
-        <div class="table-responsive">
-            <table class="table table-bordered text-center">
-                <thead class="table-primary">
-                    <tr>
-                        <th>Date</th>
-                        <th>Clock In Time</th>
-                        <th>Clock Out Time</th>
-                        <th>Work Hours</th>
-                        <th>Assigned Task</th>
-                        <th>Task Completion (%)</th>
-                        <th>Comments</th>
-                    </tr>
-                </thead>
-                <tbody id="attendanceTableBody">
-                    <?php
-                    // Display existing attendance records
-                    if(isset($_SESSION['user_data']['Employee_ID'])) {
-                        $employee_id = $_SESSION['user_data']['Employee_ID'];
-                        $query = "SELECT Date, Log_In_Time, Log_Out_Time, Work_Hours, Assigned_Task, Task_Completion, Comments 
-                                  FROM Attendance 
-                                  WHERE Employee_ID = ? 
-                                  ORDER BY Date DESC";
-                        $stmt = $conn->prepare($query);
-                        $stmt->bind_param("s", $employee_id);
-                        $stmt->execute();
-                        $result = $stmt->get_result();
-                        
-                        if($result->num_rows > 0) {
-                            while($row = $result->fetch_assoc()) {
+    <!-- Search for Employee Attendance -->
+    <div class="container mt-5">
+        <h2 class="text-center"><b>Search Employee Attendance</b></h2><br>
+        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" class="mb-4">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="search_employee_id" placeholder="Enter Employee ID" 
+                               value="<?php echo $search_employee_id; ?>" required>
+                        <button type="submit" class="btn btn-primary" name="search">Search</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        <?php if ($search_performed): ?>
+            <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Date</th>
+                            <th>Clock In Time</th>
+                            <th>Clock Out Time</th>
+                            <th>Work Hours</th>
+                            <th>Assigned Task</th>
+                            <th>Task Completion (%)</th>
+                            <th>Comments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        if ($search_results && $search_results->num_rows > 0) {
+                            while($row = $search_results->fetch_assoc()) {
                                 echo '<tr>';
                                 echo '<td>' . htmlspecialchars($row['Date']) . '</td>';
                                 echo '<td>' . htmlspecialchars($row['Log_In_Time']) . '</td>';
@@ -237,16 +270,17 @@ if (isset($_POST['submit'])) {
                                 echo '</tr>';
                             }
                         } else {
-                            echo '<tr><td colspan="7">No attendance records found</td></tr>';
+                            echo '<tr><td colspan="7">No attendance records found for this Employee ID</td></tr>';
                         }
-                        
-                        $stmt->close();
-                    }
-                    ?>
-                </tbody>
-            </table>
-        </div>
+                        ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
     </div>
+
+    <!-- Attendance Table for Current User -->
+    
 </div>
 
 <script>
