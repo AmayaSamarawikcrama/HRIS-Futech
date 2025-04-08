@@ -46,7 +46,7 @@ if (isset($_SESSION['user_id'])) {
     <style>
         .employee-name {
             font-weight: bold;
-            color: #0d6efd;
+            color: red;
         }
         .menu-icon {
             cursor: pointer;
@@ -60,9 +60,6 @@ if (isset($_SESSION['user_id'])) {
         <nav class="navbar navbar-expand-lg navbar-light bg-light p-3">
             <div class="container-fluid">
                 <span class="menu-icon" onclick="toggleMenu()">&#9776;</span>
-                <div class="ms-3 employee-name">
-                    Welcome, <?php echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']); ?>
-                </div>
                 <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; left: 10px; z-index: 1000;">
                     <a href="EmpProfile.php" class="dropdown-item">My Profile</a>
                     <a href="EmpLeave.php" class="dropdown-item">Leave Request</a>
@@ -73,8 +70,13 @@ if (isset($_SESSION['user_id'])) {
                     <a href="Company.php" class="dropdown-item">Company Details</a>
                     <a href="Calendar.php" class="dropdown-item">Calendar</a>
                 </div>
+                
+                <!-- Added employee name display here -->
+                <span class="employee-name ms-auto me-3">
+                    <?php echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']); ?>
+                </span>
                
-                <button class="btn btn-primary me-2 ms-auto" onclick="logout()">Log Out</button>
+                <button class="btn btn-primary me-2" onclick="logout()">Log Out</button>
                 <img src="assets/image.png" alt="Profile Icon" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" onclick="location.href='EmpProfile.php'">
             </div>
         </nav>
@@ -119,7 +121,7 @@ if (isset($_SESSION['user_id'])) {
         }
         
         function logout() {
-            window.location.href = 'logout.php';
+            window.location.href = "logout.php";
         }
     </script>
 </body>
