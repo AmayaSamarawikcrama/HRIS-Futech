@@ -1,3 +1,40 @@
+<?php
+// Start the session if not already started
+session_start();
+
+// Check if user is logged in and retrieve user data
+if (isset($_SESSION['user_id'])) {
+    // Connect to database
+    $conn = new mysqli('localhost', 'root', '', 'hris_db');
+    
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+    }
+    
+    // Fetch user data based on employee ID
+    $stmt = $conn->prepare("SELECT First_Name, Last_Name FROM Employee WHERE Employee_ID = ?");
+    $stmt->bind_param("s", $_SESSION['user_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if($result->num_rows > 0) {
+        $user_data = $result->fetch_assoc();
+    } else {
+        // Fallback if employee not found
+        $user_data = [
+            'First_Name' => 'Unknown',
+            'Last_Name' => 'Employee'
+        ];
+    }
+    
+    $stmt->close();
+    $conn->close();
+} else {
+    // Redirect to login page if not logged in
+    header("Location: login.php");
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,7 +53,6 @@
             color: #0d6efd;
             font-size: 25px;
         }
-       
     </style>
 </head>
 <body>
@@ -25,7 +61,7 @@
         <nav class="navbar navbar-expand-lg navbar-light bg-light p-3">
             <div class="container-fluid">
                 <span class="menu-icon" onclick="toggleMenu()">&#9776;</span>
-                <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; nav-left: 10px; z-index: 1000;">
+                <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; left: 10px; z-index: 1000;">
                     <a href="HrDashboard.html" class="d-block text-decoration-none text-dark mb-2">Dashboard</a>
                     <a href="HrAddEmployee.html" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
                     <a href="HrEmployeeDetails.html" class="d-block text-decoration-none text-dark mb-2">Employee Details</a>
@@ -35,21 +71,8 @@
                     <a href="HrSalary.html" class="d-block text-decoration-none text-dark mb-2">Salary</a>
                     <a href="Report.php" class="d-block text-decoration-none text-dark mb-2">Report</a>
                     <a href="Calendar.html" class="d-block text-decoration-none text-dark mb-2">Calendar</a>
-
                 </div>
-                <script>
-                    function toggleMenu() {
-                        const menuList = document.getElementById('menu-list');
-                        menuList.classList.toggle('d-none');
-                    }
-                </script>
 
-<script>
-    function toggleMenu() {
-        const menuList = document.getElementById('menu-list');
-        menuList.classList.toggle('d-none');
-    }
-</script>
                 <span class="employee-name ms-auto me-3">
                     <?php 
                         echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']);
@@ -60,22 +83,27 @@
             </div>
         </nav>
 
-  
-    <div class="container mt-4 text-center">
-        <div class="row g-4">
-            <div class="col-md-6">
-                <img src="assets/manual attendance.JPG" alt="Attendance Image 1" class="img-fluid rounded">
-                <button class="btn btn-primary w-100 mt-3 p-3 fs-5" onclick="location.href='ManualAttendance.html'">Manual List</button>
-            </div>
-            <div class="col-md-6">
-                <img src="assets/finger print.JPG" alt="Attendance Image 2" class="img-fluid rounded">
-                <button class="btn btn-primary w-100 mt-3 p-3 fs-5">Finger Print</button>
+        <div class="container mt-4 text-center">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <img src="assets/manual attendance.JPG" alt="Attendance Image 1" class="img-fluid rounded">
+                    <button class="btn btn-primary w-100 mt-3 p-3 fs-5" onclick="location.href='EmpManualAttendance.php'">Add Attendance Manually</button>
+                </div>
+                <div class="col-md-6">
+                    <img src="assets/finger print.JPG" alt="Attendance Image 2" class="img-fluid rounded">
+                    <button class="btn btn-primary w-100 mt-3 p-3 fs-5">Finger Print</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function toggleMenu() {
+            const menuList = document.getElementById('menu-list');
+            menuList.classList.toggle('d-none');
+        }
+        
         function logout() {
             window.location.href = "logout.php";
         }

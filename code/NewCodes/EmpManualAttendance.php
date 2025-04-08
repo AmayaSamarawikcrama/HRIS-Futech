@@ -1,3 +1,128 @@
+<?php
+// Start session and include database connection
+session_start();
+
+// Function to establish database connection
+function getDBConnection() {
+    // We'll use direct connection instead of relying on potentially missing config file
+    $host = 'localhost';
+    $dbname = 'hris_db';
+    $username = 'root';
+    $password = '';
+    
+    $conn = new mysqli($host, $username, $password, $dbname);
+    
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+    }
+    return $conn;
+}
+
+// Check if user is logged in, redirect if not
+if (!isset($_SESSION['user_data'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// Handle logout
+if (isset($_GET['logout'])) {
+    session_unset();
+    session_destroy();
+    header("Location: login.php");
+    exit();
+}
+
+// Generate CSRF token if it doesn't exist
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit'])) {
+    // Verify CSRF token
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $_SESSION['message'] = "Security verification failed. Please try again.";
+        $_SESSION['message_type'] = "error";
+        header("Location: attendance.php");
+        exit();
+    }
+    
+    $conn = getDBConnection();
+    
+    // Get form data and sanitize
+    $employee_id = filter_var($_POST['employee_id'], FILTER_SANITIZE_STRING);
+    $date = filter_var($_POST['date'], FILTER_SANITIZE_STRING);
+    $clock_in = filter_var($_POST['clock_in'], FILTER_SANITIZE_STRING);
+    $clock_out = filter_var($_POST['clock_out'], FILTER_SANITIZE_STRING);
+    $work_hours = filter_var($_POST['work_hours'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+    $assigned_task = filter_var($_POST['assigned_task'], FILTER_SANITIZE_STRING);
+    $task_completion = filter_var($_POST['task_completion'], FILTER_SANITIZE_NUMBER_INT);
+    $comments = filter_var($_POST['comments'], FILTER_SANITIZE_STRING);
+    
+    // Validate data
+    if (empty($employee_id) || empty($date) || empty($clock_in) || empty($clock_out) || 
+        empty($work_hours) || empty($assigned_task) || empty($task_completion)) {
+        $_SESSION['message'] = "All fields are required except comments.";
+        $_SESSION['message_type'] = "error";
+        header("Location: attendance.php");
+        exit();
+    }
+    
+    // Additional validation
+    if ($task_completion < 0 || $task_completion > 100) {
+        $_SESSION['message'] = "Task completion must be between 0 and 100 percent.";
+        $_SESSION['message_type'] = "error";
+        header("Location: attendance.php");
+        exit();
+    }
+    
+    if ($work_hours <= 0) {
+        $_SESSION['message'] = "Work hours must be greater than zero.";
+        $_SESSION['message_type'] = "error";
+        header("Location: attendance.php");
+        exit();
+    }
+    
+    // Check if attendance already exists
+    $check_query = "SELECT * FROM Attendance WHERE Employee_ID = ? AND Date = ?";
+    $check_stmt = $conn->prepare($check_query);
+    $check_stmt->bind_param("ss", $employee_id, $date);
+    $check_stmt->execute();
+    $result = $check_stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $_SESSION['message'] = "Attendance already recorded for this date.";
+        $_SESSION['message_type'] = "error";
+        header("Location: attendance.php");
+        exit();
+    }
+    
+    // Insert new attendance record
+    $insert_query = "INSERT INTO Attendance 
+                    (Employee_ID, Date, Log_In_Time, Log_Out_Time, Work_Hours, Assigned_Task, Task_Completion, Comments) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    
+    $insert_stmt = $conn->prepare($insert_query);
+    $insert_stmt->bind_param("ssssdsds", $employee_id, $date, $clock_in, $clock_out, 
+                            $work_hours, $assigned_task, $task_completion, $comments);
+    
+    if ($insert_stmt->execute()) {
+        $_SESSION['message'] = "Attendance recorded successfully!";
+        $_SESSION['message_type'] = "success";
+    } else {
+        $_SESSION['message'] = "Error recording attendance: " . $conn->error;
+        $_SESSION['message_type'] = "error";
+    }
+    
+    $insert_stmt->close();
+    $check_stmt->close();
+    $conn->close();
+    
+    header("Location: attendance.php");
+    exit();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,140 +144,42 @@
         }
         .error { color: red; }
         .success { color: green; }
+        #menu-list {
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .menu-item:hover {
+            background-color: #f8f9fa;
+        }
     </style>
 </head>
 <body>
-<?php
-session_start();
-
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "hris_db";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-if (isset($_POST['submit'])) {
-    $employee_id = mysqli_real_escape_string($conn, $_POST['employee_id']);
-    $date = mysqli_real_escape_string($conn, $_POST['date']);
-    $clock_in = mysqli_real_escape_string($conn, $_POST['clock_in']);
-    $clock_out = mysqli_real_escape_string($conn, $_POST['clock_out']);
-    $work_hours = mysqli_real_escape_string($conn, $_POST['work_hours']);
-    $assigned_task = mysqli_real_escape_string($conn, $_POST['assigned_task']);
-    $task_completion = mysqli_real_escape_string($conn, $_POST['task_completion']);
-    $comments = mysqli_real_escape_string($conn, $_POST['comments']);
-    
-    $errors = [];
-    
-    $check_employee = $conn->prepare("SELECT Employee_ID FROM Employee WHERE Employee_ID = ?");
-    $check_employee->bind_param("s", $employee_id);
-    $check_employee->execute();
-    $result = $check_employee->get_result();
-    
-    if ($result->num_rows == 0) {
-        $errors[] = "Employee ID does not exist";
-    }
-    
-    $check_attendance = $conn->prepare("SELECT Attendance_ID FROM Attendance WHERE Employee_ID = ? AND Date = ?");
-    $check_attendance->bind_param("ss", $employee_id, $date);
-    $check_attendance->execute();
-    $result = $check_attendance->get_result();
-    
-    if ($result->num_rows > 0) {
-        $errors[] = "Attendance record already exists for this date";
-    }
-    
-    if (empty($errors)) {
-        $query = "INSERT INTO Attendance (Employee_ID, Date, Log_In_Time, Log_Out_Time, Work_Hours, Assigned_Task, Task_Completion, Comments) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("ssssdsds", $employee_id, $date, $clock_in, $clock_out, $work_hours, $assigned_task, $task_completion, $comments);
-        
-        if ($stmt->execute()) {
-            $_SESSION['message'] = "Attendance record added successfully!";
-            $_SESSION['message_type'] = "success";
-        } else {
-            $_SESSION['message'] = "Error adding attendance record: " . $conn->error;
-            $_SESSION['message_type'] = "error";
-        }
-        
-        $stmt->close();
-    } else {
-        $_SESSION['message'] = "Error: " . implode(", ", $errors);
-        $_SESSION['message_type'] = "error";
-    }
-    
-    header("Location: ".$_SERVER['PHP_SELF']);
-    exit();
-}
-
-$search_employee_id = "";
-$search_performed = false;
-$search_results = [];
-
-if (isset($_POST['search'])) {
-    $search_employee_id = mysqli_real_escape_string($conn, $_POST['search_employee_id']);
-    $search_performed = true;
-    
-    $check_employee = $conn->prepare("SELECT Employee_ID FROM Employee WHERE Employee_ID = ?");
-    $check_employee->bind_param("s", $search_employee_id);
-    $check_employee->execute();
-    $result = $check_employee->get_result();
-    
-    if ($result->num_rows > 0) {
-        $query = "SELECT Date, Log_In_Time, Log_Out_Time, Work_Hours, Assigned_Task, Task_Completion, Comments 
-                  FROM Attendance 
-                  WHERE Employee_ID = ? 
-                  ORDER BY Date DESC";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("s", $search_employee_id);
-        $stmt->execute();
-        $search_results = $stmt->get_result();
-        $stmt->close();
-    } else {
-        $_SESSION['message'] = "Employee ID does not exist";
-        $_SESSION['message_type'] = "error";
-    }
-}
-?>
-
 <div class="container-fluid">
     <nav class="navbar navbar-expand-lg navbar-light bg-light p-3">
         <div class="container-fluid">
             <span class="menu-icon" onclick="toggleMenu()">&#9776;</span>
-            <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; nav-left: 10px; z-index: 1000;">
-                <a href="EmpDashboard.html" class="dropdown-item">Dashboard</a>
-                <a href="EmpProfile.html" class="dropdown-item">My Profile</a>
-                <a href="EmpLeave.html" class="dropdown-item">Leave Request</a>
-                <a href="EmpManualAttendance.html" class="dropdown-item">My Attendance</a>
-                <a href="EmpProject.html" class="dropdown-item"> Projects</a>
-                <a href="EmpSalary.html" class="dropdown-item">Salary Status</a>
-                <a href="Report.php" class="dropdown-item">Report</a>
-                <a href="Company.php" class="dropdown-item">Company Details</a>
-                <a href="Calendar.php" class="dropdown-item">Calendar</a>
+            <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; left: 10px; z-index: 1000;">
+                <a href="Dashboard.php" class="d-block text-decoration-none text-dark mb-2 p-2 menu-item">Add Employee</a>
+                <a href="View_Employee.php" class="d-block text-decoration-none text-dark mb-2 p-2 menu-item">View Employee</a>
+                <a href="attendance.php" class="d-block text-decoration-none text-dark mb-2 p-2 menu-item">Attendance</a>
+                <a href="Project.php" class="d-block text-decoration-none text-dark mb-2 p-2 menu-item">Project</a>
+                <a href="Leave.php" class="d-block text-decoration-none text-dark mb-2 p-2 menu-item">Leave</a>
+                <a href="Salary.php" class="d-block text-decoration-none text-dark mb-2 p-2 menu-item">Salary</a>
+                <a href="Report.php" class="d-block text-decoration-none text-dark mb-2 p-2 menu-item">Report</a>
             </div>
-            <script>
-                function toggleMenu() {
-                    const menuList = document.getElementById('menu-list');
-                    menuList.classList.toggle('d-none');
-                }
-                
-                function logout() {
-                    window.location.href = 'logout.php';
-                }
-            </script>
-           
-            <button class="btn btn-primary me-2 ms-auto" onclick="logout()">Log Out</button>
-            <img src="assets/image.png" alt="Profile Icon" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" onclick="location.href='assets/image.png'">
+            <?php
+            if(isset($_SESSION['user_data'])) {
+                echo '<span class="employee-name ms-auto me-3">' . 
+                     htmlspecialchars($_SESSION['user_data']['First_Name'] . ' ' . $_SESSION['user_data']['Last_Name']) . 
+                     '</span>';
+            }
+            ?>
+            <a href="attendance.php?logout=1" class="btn btn-primary me-2">Log Out</a>
+            <img src="assets/image.png" alt="Profile Icon" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" onclick="location.href='profile.php'">
         </div>
     </nav>
-    
 
+    <!-- Attendance Entry Form -->
     <div class="container mt-4">
         <h2 class="text-center"><b>Enter Your Attendance</b></h2><br>
         <?php
@@ -163,33 +190,34 @@ if (isset($_POST['search'])) {
             unset($_SESSION['message_type']);
         }
         ?>
-        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" id="attendanceForm">
+        <form method="POST" action="attendance.php" id="attendanceForm">
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Employee ID:</label>
                     <input type="text" class="form-control" name="employee_id" required 
-                           value="<?php echo isset($_SESSION['user_data']['Employee_ID']) ? $_SESSION['user_data']['Employee_ID'] : ''; ?>" 
+                           value="<?php echo isset($_SESSION['user_data']['Employee_ID']) ? htmlspecialchars($_SESSION['user_data']['Employee_ID']) : ''; ?>" 
                            <?php echo isset($_SESSION['user_data']['Employee_ID']) ? 'readonly' : ''; ?>>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Date:</label>
-                    <input type="date" class="form-control" name="date" required value="<?php echo date('Y-m-d'); ?>">
+                    <input type="date" class="form-control" name="date" required value="<?php echo date('Y-m-d'); ?>" max="<?php echo date('Y-m-d'); ?>">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Clock In Time:</label>
-                    <input type="time" class="form-control" name="clock_in" required>
+                    <input type="time" class="form-control" name="clock_in" id="clock_in" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Clock Out Time:</label>
-                    <input type="time" class="form-control" name="clock_out" required>
+                    <input type="time" class="form-control" name="clock_out" id="clock_out" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Work Hours:</label>
-                    <input type="number" step="0.01" class="form-control" name="work_hours" placeholder="Enter work hours" required>
+                    <input type="number" step="0.01" class="form-control" name="work_hours" id="work_hours" placeholder="Enter work hours" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Assigned Task:</label>
-                    <input type="text" class="form-control" name="assigned_task" placeholder="Enter assigned task" required>
+                    <input type="text" class="form-control" name="assigned_task" placeholder="Enter assigned task" required maxlength="255">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Task Completion (%):</label>
@@ -197,47 +225,48 @@ if (isset($_POST['search'])) {
                 </div>
                 <div class="col-12">
                     <label class="form-label">Comments:</label>
-                    <textarea class="form-control" name="comments" rows="3" placeholder="Enter comments"></textarea>
+                    <textarea class="form-control" name="comments" rows="3" placeholder="Enter comments" maxlength="500"></textarea>
                 </div>
                 <div class="col-12 text-center mt-3">
-                    <button type="submit" class="btn btn-primary w-30" name="submit">Submit</button><br>
+                    <button type="submit" class="btn btn-primary w-50" name="submit">Submit Attendance</button><br>
                 </div>
             </div>
         </form>
     </div>
 
-    <div class="container mt-5">
-        <h2 class="text-center"><b>Search Employee Attendance</b></h2><br>
-        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" class="mb-4">
-            <div class="row justify-content-center">
-                <div class="col-md-6">
-                    <div class="input-group">
-                        <input type="text" class="form-control" name="search_employee_id" placeholder="Enter Employee ID" 
-                               value="<?php echo $search_employee_id; ?>" required>
-                        <button type="submit" class="btn btn-primary" name="search">Search</button>
-                    </div>
-                </div>
-            </div>
-        </form>
-        
-        <?php if ($search_performed): ?>
-            <div class="table-responsive">
-                <table class="table table-bordered text-center">
-                    <thead class="table-primary">
-                        <tr>
-                            <th>Date</th>
-                            <th>Clock In Time</th>
-                            <th>Clock Out Time</th>
-                            <th>Work Hours</th>
-                            <th>Assigned Task</th>
-                            <th>Task Completion (%)</th>
-                            <th>Comments</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        if ($search_results && $search_results->num_rows > 0) {
-                            while($row = $search_results->fetch_assoc()) {
+    <!-- Attendance Table -->
+    <div class="container mt-4">
+        <h2 class="text-center"><b>My Attendance Records</b></h2><br>
+        <div class="table-responsive">
+            <table class="table table-bordered text-center">
+                <thead class="table-primary">
+                    <tr>
+                        <th>Date</th>
+                        <th>Clock In Time</th>
+                        <th>Clock Out Time</th>
+                        <th>Work Hours</th>
+                        <th>Assigned Task</th>
+                        <th>Task Completion (%)</th>
+                        <th>Comments</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceTableBody">
+                    <?php
+                    // Display existing attendance records
+                    if(isset($_SESSION['user_data']['Employee_ID'])) {
+                        $conn = getDBConnection();
+                        $employee_id = $_SESSION['user_data']['Employee_ID'];
+                        $query = "SELECT Date, Log_In_Time, Log_Out_Time, Work_Hours, Assigned_Task, Task_Completion, Comments 
+                                  FROM Attendance 
+                                  WHERE Employee_ID = ? 
+                                  ORDER BY Date DESC";
+                        $stmt = $conn->prepare($query);
+                        $stmt->bind_param("s", $employee_id);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        
+                        if($result->num_rows > 0) {
+                            while($row = $result->fetch_assoc()) {
                                 echo '<tr>';
                                 echo '<td>' . htmlspecialchars($row['Date']) . '</td>';
                                 echo '<td>' . htmlspecialchars($row['Log_In_Time']) . '</td>';
@@ -249,34 +278,95 @@ if (isset($_POST['search'])) {
                                 echo '</tr>';
                             }
                         } else {
-                            echo '<tr><td colspan="7">No attendance records found for this Employee ID</td></tr>';
+                            echo '<tr><td colspan="7">No attendance records found</td></tr>';
                         }
-                        ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
+                        
+                        $stmt->close();
+                        $conn->close();
+                    }
+                    ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
-    document.querySelector('input[name="clock_out"]').addEventListener('change', function() {
-        const clockIn = document.querySelector('input[name="clock_in"]').value;
-        const clockOut = this.value;
+    // Function to toggle the menu
+    function toggleMenu() {
+        const menuList = document.getElementById('menu-list');
+        menuList.classList.toggle('d-none');
+        
+        // Close menu when clicking outside
+        if (!menuList.classList.contains('d-none')) {
+            document.addEventListener('click', function closeMenu(e) {
+                if (!e.target.closest('#menu-list') && e.target.className !== 'menu-icon') {
+                    menuList.classList.add('d-none');
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        }
+    }
+
+    // Calculate work hours automatically when clock times change
+    document.getElementById('clock_in').addEventListener('change', calculateHours);
+    document.getElementById('clock_out').addEventListener('change', calculateHours);
+    
+    function calculateHours() {
+        const clockIn = document.getElementById('clock_in').value;
+        const clockOut = document.getElementById('clock_out').value;
         
         if(clockIn && clockOut) {
-            const start = new Date(`2000-01-01T${clockIn}`);
-            const end = new Date(`2000-01-01T${clockOut}`);
-            const diff = (end - start) / (1000 * 60 * 60);
+            // Parse the times
+            const [inHours, inMins] = clockIn.split(':').map(Number);
+            const [outHours, outMins] = clockOut.split(':').map(Number);
+            
+            // Convert to minutes
+            let inMinutes = inHours * 60 + inMins;
+            let outMinutes = outHours * 60 + outMins;
+            
+            // Handle overnight shift
+            if (outMinutes < inMinutes) {
+                outMinutes += 24 * 60; // Add 24 hours
+            }
+            
+            // Calculate difference in hours
+            const diff = (outMinutes - inMinutes) / 60;
             
             if(diff > 0) {
-                document.querySelector('input[name="work_hours"]').value = diff.toFixed(2);
+                document.getElementById('work_hours').value = diff.toFixed(2);
+            } else {
+                document.getElementById('work_hours').value = '';
             }
+        }
+    }
+    
+    // Form validation
+    document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+        const workHours = parseFloat(document.getElementById('work_hours').value);
+        const taskCompletion = parseInt(document.querySelector('input[name="task_completion"]').value);
+        
+        let isValid = true;
+        let errorMessage = '';
+        
+        if (isNaN(workHours) || workHours <= 0) {
+            errorMessage = 'Work hours must be greater than zero.';
+            isValid = false;
+        } else if (workHours > 24) {
+            errorMessage = 'Work hours cannot exceed 24 hours per day.';
+            isValid = false;
+        }
+        
+        if (isNaN(taskCompletion) || taskCompletion < 0 || taskCompletion > 100) {
+            errorMessage = 'Task completion must be between 0 and 100 percent.';
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert(errorMessage);
         }
     });
 </script>
-<?php
-$conn->close();
-?>
 </body>
 </html>
