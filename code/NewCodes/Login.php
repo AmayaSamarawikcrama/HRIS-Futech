@@ -24,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->execute();
         $employee = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($employee && $password === $employee['Password']) { // Directly compare plaintext passwords
+        if ($employee && $password === $employee['Password']) { 
             session_regenerate_id(true);
 
             $_SESSION['user_id'] = $employee['Employee_ID'];
