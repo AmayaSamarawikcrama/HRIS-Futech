@@ -84,23 +84,55 @@
                                 <td>2025-04-12</td>
                                 <td>Pending</td>
                                 <td>
-                                    <button class="btn btn-success btn-sm">Approve</button>
-                                    <button class="btn btn-danger btn-sm">Reject</button>
-                                    <button class="btn btn-primary btn-sm">View Details</button>
-                                </td>
+                                    <button class="btn btn-success btn-sm" onclick="updateStatus(this, 'Approved')">Approve</button>
+                                    <button class="btn btn-danger btn-sm" onclick="updateStatus(this, 'Rejected')">Reject</button>
+                                    <script>
+                                        function updateStatus(button, status) {
+                                            const row = button.closest('tr');
+                                            const statusCell = row.querySelector('td:nth-child(5)');
+                                            statusCell.textContent = status;
+                                        }
+                                    </script>
+                                    <button class="btn btn-primary btn-sm" onclick="viewDetails('John Doe', 'Sick Leave', '2025-04-10', '2025-04-12')">View Details</button>
+                                    <script>
+                                        function viewDetails(name, leaveType, startDate, endDate,reson) {
+                                            const details = `
+                                                <div>
+                                                    
+                                                    <p><strong>Employee Name:</strong> ${name}</p>
+                                                    <p><strong>Leave Type:</strong> ${leaveType}</p>
+                                                    <p><strong>Start Date:</strong> ${startDate}</p>
+                                                    <p><strong>End Date:</strong> ${endDate}</p>
+                                                    <p><strong>Reson:</strong> ${reson}</p>
+                                                </div>
+                                            `;
+                                            const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+                                            document.getElementById('modalBody').innerHTML = details;
+                                            modal.show();
+                                        }
+                                    </script>
+
+                                    <!-- Modal -->
+                                    <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="detailsModalLabel">Leave Details</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body" id="modalBody">
+                                                    <!-- Details will be injected here -->
+                                                    <p><strong>Reason:</strong> <!-- Reason will be dynamically added here --></p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                             </tr>
-                            <tr>
-                                <td>Jane Smith</td>
-                                <td>Vacation Leave</td>
-                                <td>2025-05-01</td>
-                                <td>2025-05-07</td>
-                                <td>Pending</td>
-                                <td>
-                                    <button class="btn btn-success btn-sm">Approve</button>
-                                    <button class="btn btn-danger btn-sm">Reject</button>
-                                    <button class="btn btn-primary btn-sm">View Details</button>
-                                </td>
-                            </tr>
+                          
                         </tbody>
                     </table>
 
