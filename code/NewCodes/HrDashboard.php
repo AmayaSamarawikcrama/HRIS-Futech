@@ -118,6 +118,8 @@ $conn->close();
                     <a href="Leave.php" class="d-block text-decoration-none text-dark mb-2">Leave</a>
                     <a href="HrSalary.html" class="d-block text-decoration-none text-dark mb-2">Salary</a>
                     <a href="Report.php" class="d-block text-decoration-none text-dark mb-2">Report</a>
+                    <a href="Company.html" class="d-block text-decoration-none text-dark mb-2">Company</a>
+                    <a href="HrCalendar.html" class="d-block text-decoration-none text-dark mb-2">Calendar</a>
                 </div>
                 <script>
                     function toggleMenu() {
@@ -169,10 +171,10 @@ $conn->close();
 
             <div class="row mt-4 g-2">
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='View_Employee.php'">Employee Details</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrEmployeeDetails.html'">Employee Details</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Add_Employee.php'">Add Employee</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrAddEmployee.html'">Add Employee</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
                     <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='project.php'">Project</button>
@@ -196,7 +198,7 @@ $conn->close();
                     <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Company.html'">Company</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Calendar.html'">Calendar</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrCalendar.html'">Calendar</button>
                 </div>
             </div>
         </div>
