@@ -1,49 +1,60 @@
 <?php
 session_start();
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "hris_db";
+$host = 'localhost';
+$dbname = 'hris_db';
+$username = 'root';
+$password = '';
 
-try {
-    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) { 
-    die("Connection failed: " . $e->getMessage());
+try
+{
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+}
+catch(PDOException $e)
+{
+    die("Database error occurred: " . $e->getMessage());
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = $_POST["username"];
-    $password = $_POST["password"];
-
-    try {
-        // Fetch user details
-        $stmt = $conn->prepare("SELECT * FROM Employee WHERE Employee_ID  = :username");
+if ($_SERVER["REQUEST_METHOD"] == "POST")
+{
+    $username = trim($_POST['username']);
+    $password = trim($_POST['password']);
+    
+    try
+    {
+        $stmt = $pdo->prepare("SELECT Employee_ID, Password, Employee_Type FROM Employee WHERE Employee_ID = :username OR Email = :username");
         $stmt->bindParam(':username', $username);
         $stmt->execute();
-
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($user && password_verify($password, $user['Password'])) { // Ensure password is hashed in DB
-            $_SESSION['user_id'] = $user['User_ID'];
-
-            // Redirect based on username prefix
-            if (strpos($username, 'EMP') === 0) {
+        $employee = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($employee && password_verify($password, $employee['Password']))
+        {
+            $_SESSION['user_id'] = $employee['Employee_ID'];
+            $_SESSION['user_type'] = $employee['Employee_Type'];
+            
+            if ($employee['Employee_Type'] == 'HumanResource Manager')
+            {
+                header("Location: HrDashboard.php");
+            }
+            else if ($employee['Employee_Type'] == 'Manager')
+            {
+                header("Location: HrDashboard.php");
+            }
+            else
+            {
                 header("Location: dash.php");
-            } elseif (strpos($username, 'HR') === 0) {
-                header("Location: hrDash.php");
-            } elseif (strpos($username, 'MN') === 0) {
-                header("Location: managerDash.php"); // Changed from hrDash.php for MN users
-            } else {
-                header("Location: dashboard.php"); // Default fallback
             }
             exit();
-        } else {
+        }
+        else
+        {
             $error = "Invalid Username or Password";
         }
-    } catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
+    }
+    catch(PDOException $e)
+    {
+        die("Database error occurred: " . $e->getMessage());
     }
 }
 ?>
@@ -53,7 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login | HRIS System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <style>
         .divider:after,
@@ -73,31 +84,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <img src="assets/login.png" class="img-fluid" alt="Login Image">
                 </div>
                 <div class="col-md-7 col-lg-5 col-xl-5 offset-xl-1">
-                    <form method="POST">
-                        <h2 class="text-center mb-4"><b>Login</b></h2>
-
+                    <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+                        <h2 class="text-center mb-4"><b>HRIS Login</b></h2>
+                        
                         <div class="form-outline mb-4">
-                            <input type="text" name="username" class="form-control form-control-lg" style="border: 2px solid rgb(32, 122, 232);" required />
-                            <label class="form-label">User ID</label>
+                            <label for="username" class="form-label">Employee ID or Email</label>
+                            <input type="text" id="username" name="username" class="form-control form-control-lg"
+                                 style="border: 2px solid rgb(32, 122, 232);" required />
                         </div>
-
+                        
                         <div class="form-outline mb-4">
-                            <input type="password" name="password" class="form-control form-control-lg" style="border: 2px solid rgb(32, 122, 232);" required />
-                            <label class="form-label">Password</label>
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" id="password" name="password" class="form-control form-control-lg"
+                                 style="border: 2px solid rgb(32, 122, 232);" required />
                         </div>
-
-                        <?php if (isset($error)): ?>
-                            <div class="alert alert-danger text-center"><?= $error ?></div>
+                        
+                        <?php if (!empty($error)): ?>
+                            <div class="alert alert-danger text-center"><?= htmlspecialchars($error) ?></div>
                         <?php endif; ?>
-
+                        
                         <div class="d-flex justify-content-around align-items-center mb-4">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="" checked />
-                                <label class="form-check-label">Remember me</label>
+                                <input class="form-check-input" type="checkbox" id="remember" name="remember" value="1" checked />
+                                <label class="form-check-label" for="remember">Remember me</label>
                             </div>
-                            <a href="#!">Forgot password?</a>
+                            <a href="forgot_password.php">Forgot password?</a>
                         </div>
-
+                        
                         <div class="d-flex justify-content-center">
                             <button type="submit" class="btn btn-primary btn-lg btn-block w-100">Sign in</button>
                         </div>
@@ -106,7 +119,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </div>
     </section>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
