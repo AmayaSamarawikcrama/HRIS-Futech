@@ -6,7 +6,6 @@ $dbname = 'hris_db';
 $username = 'root';
 $password = '';
 
-
 $conn = new mysqli($host, $username, $password, $dbname);
 
 if($conn->connect_error)
@@ -20,23 +19,62 @@ if($conn->connect_error)
 //     exit();
 // }
 
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'] ?? '';
 
-$stmt = $conn->prepare("
-    SELECT e.*, d.Department_Name
-    FROM Employee e
-    LEFT JOIN Department d ON e.Department_ID = d.Department_ID
-    WHERE e.Employee_ID = ?
-");
+// Get user data
+if($user_id) {
+    $stmt = $conn->prepare("
+        SELECT e.*, d.Department_Name
+        FROM Employee e
+        LEFT JOIN Department d ON e.Department_ID = d.Department_ID
+        WHERE e.Employee_ID = ?
+    ");
 
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$user_data = $result->fetch_assoc();
+    $stmt->bind_param("s", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user_data = $result->fetch_assoc();
+    $stmt->close();
+}
 
-$stmt->close();
+// Get employee count
+$employee_count = 0;
+$query = "SELECT COUNT(*) as total FROM Employee";
+$result = $conn->query($query);
+if($result) {
+    $row = $result->fetch_assoc();
+    $employee_count = $row['total'];
+}
+
+// Get present today count
+$present_count = 0;
+$today = date('Y-m-d');
+$query = "SELECT COUNT(DISTINCT Employee_ID) as present FROM Attendance WHERE Date = '$today'";
+$result = $conn->query($query);
+if($result) {
+    $row = $result->fetch_assoc();
+    $present_count = $row['present'];
+}
+
+// Get absent count (all employees minus present)
+$absent_count = $employee_count - $present_count;
+
+// Get on leave count
+$leave_count = 0;
+$query = "SELECT COUNT(DISTINCT Employee_ID) as on_leave FROM Leave_Management 
+          WHERE '$today' BETWEEN Start_Date AND End_Date 
+          AND Approval_Status = 'Approved'";
+$result = $conn->query($query);
+if($result) {
+    $row = $result->fetch_assoc();
+    $leave_count = $row['on_leave'];
+}
+
+// Adjust absent count (subtract those on approved leave)
+$absent_count -= $leave_count;
+if($absent_count < 0) $absent_count = 0;
+
 $conn->close(); 
-
 ?>
 
 <!DOCTYPE html>
@@ -55,6 +93,15 @@ $conn->close();
             cursor: pointer;
             color: #0d6efd;
             font-size: 25px;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .stat-label {
+            font-weight: bold;
+            font-size: 1.2rem;
         }
     </style>
 </head>
@@ -80,8 +127,10 @@ $conn->close();
                 </script>
                 <span class="employee-name ms-auto me-3">
                     <?php
-                        // Assuming $user_data is defined and contains user information
-                        echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']);
+                        // Displaying user name if available
+                        if(isset($user_data)) {
+                            echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']);
+                        }
                     ?>
                 </span>
                 
@@ -93,18 +142,29 @@ $conn->close();
         <div class="container mt-4">
             <div class="row g-3">
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <div class="card text-center p-4 fs-5" style="height: 150px;"><b>Company Employees</b></div>
+                    <div class="card text-center p-4" style="height: 150px;">
+                        <div class="stat-number"><?php echo $employee_count; ?></div>
+                        <div class="stat-label">Company Employees</div>
+                    </div>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <div class="card text-center p-4 fs-5" style="height: 150px;"><b>Present Today</b></div>
+                    <div class="card text-center p-4" style="height: 150px;">
+                        <div class="stat-number"><?php echo $present_count; ?></div>
+                        <div class="stat-label">Present Today</div>
+                    </div>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <div class="card text-center p-4 fs-5" style="height: 150px;"><b>Absant Today</b></div>
+                    <div class="card text-center p-4" style="height: 150px;">
+                        <div class="stat-number"><?php echo $absent_count; ?></div>
+                        <div class="stat-label">Absent Today</div>
+                    </div>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <div class="card text-center p-4 fs-5" style="height: 150px;"><b>On Leave Today</b></div>
+                    <div class="card text-center p-4" style="height: 150px;">
+                        <div class="stat-number"><?php echo $leave_count; ?></div>
+                        <div class="stat-label">On Leave Today</div>
+                    </div>
                 </div>
-            </div>
             </div>
 
             <div class="row mt-4 g-2">
