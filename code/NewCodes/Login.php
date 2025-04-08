@@ -23,18 +23,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bindValue(':username', $username, PDO::PARAM_STR);
         $stmt->execute();
         $employee = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($employee && $password === $employee['Password']) { 
+        
+        if ($employee && $password === $employee['Password']) {
             session_regenerate_id(true);
-
             $_SESSION['user_id'] = $employee['Employee_ID'];
             $_SESSION['user_type'] = $employee['Employee_Type'];
-
-            $redirect_page = ($employee['Employee_Type'] == 'HumanResource Manager' || $employee['Employee_Type'] == 'Manager' || $employee['Employee_Type'] == 'Employee') 
-    ? "HrDashboard.php" 
-    : "EmpDashboard.php";
-
-
+            
+            // Fixed redirection logic
+            $redirect_page = ($employee['Employee_Type'] == 'HumanResource Manager' || $employee['Employee_Type'] == 'Manager') 
+                ? "HrDashboard.php" 
+                : "EmpDashboard.php";
+            
             header("Location: $redirect_page");
             exit();
         } else {
