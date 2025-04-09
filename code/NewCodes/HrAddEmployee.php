@@ -42,6 +42,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $department_id = $_POST['department_id'];
     $manager_id = !empty($_POST['manager_id']) ? $_POST['manager_id'] : null;
     $employee_type = $_POST['employee_type'];
+
+    // Generate Employee_ID
+if ($employee_type == 'HumanResource Manager') {
+    $prefix = 'HM';
+} elseif ($employee_type == 'Manager MAN') {
+    $prefix = 'MAN';
+} else {
+    $prefix = 'EMP';
+}
+
+$result = $conn->query("SELECT MAX(CAST(SUBSTRING(Employee_ID, 3) AS UNSIGNED)) AS max_id FROM Employee WHERE Employee_ID LIKE '$prefix%'");
+$row = $result->fetch_assoc();
+$max_id = $row['max_id'] ? $row['max_id'] + 1 : 1;
+
+// Generate the final Employee_ID
+$employee_id = $prefix . str_pad($max_id, 4, '0', STR_PAD_LEFT);
+
     
     // Handle file upload
     $file_name = '';
