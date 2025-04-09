@@ -50,6 +50,24 @@ $conn->close();
             color: #0d6efd;
             font-size: 25px;
         }
+        /* Modal styling */
+        .modal-content {
+            border-radius: 15px;
+        }
+        .modal-header {
+            background-color: #0d6efd;
+            color: white;
+            border-bottom: none;
+        }
+        .modal-body {
+            padding: 30px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .modal-footer {
+            border-top: none;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -85,12 +103,34 @@ $conn->close();
                 </div>
                 <div class="col-md-6">
                     <img src="assets/finger print.JPG" alt="Attendance Image 2" class="img-fluid rounded">
-                    <button class="btn btn-primary w-100 mt-3 p-3 fs-5">Finger Print</button>
+                    <button class="btn btn-primary w-100 mt-3 p-3 fs-5" data-bs-toggle="modal" data-bs-target="#comingSoonModal">Finger Print</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Coming Soon Modal -->
+    <div class="modal fade" id="comingSoonModal" tabindex="-1" aria-labelledby="comingSoonModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="comingSoonModalLabel">Feature Coming Soon</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <i class="fas fa-clock fa-4x mb-3" style="color: #0d6efd;"></i>
+                    <p>The Finger Print Attendance feature is currently under development and will be available soon!</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Font Awesome for the clock icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function toggleMenu() {
