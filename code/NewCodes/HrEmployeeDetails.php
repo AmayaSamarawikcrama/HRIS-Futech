@@ -1,3 +1,62 @@
+<?php
+// Start session
+session_start();
+
+// Database Connection - Using default XAMPP credentials
+$servername = "localhost";
+$username = "root";       // Default XAMPP username
+$password = "";           // Default XAMPP password (empty)
+$dbname = "hris_db";      // Your database name
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Check if user is logged in
+if (!isset($_SESSION['Employee_ID'])) {
+    // Redirect to login page if not logged in
+    header("Location: login.php");
+    exit();
+}
+
+// Get user data for header display
+$employee_id = $_SESSION['Employee_ID'];
+$sql = "SELECT First_Name, Last_Name FROM Employee WHERE Employee_ID = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $employee_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $user_data = $result->fetch_assoc();
+} else {
+    // Handle case where employee data isn't found
+    $user_data = ['First_Name' => 'Guest', 'Last_Name' => ''];
+}
+$stmt->close();
+
+// Get all departments
+$sql_departments = "SELECT Department_ID, Department_Name FROM Department ORDER BY Department_Name";
+$departments_result = $conn->query($sql_departments);
+
+// Function to logout
+function logout() {
+    session_unset();
+    session_destroy();
+    header("Location: login.php");
+    exit();
+}
+
+// Handle logout if requested
+if (isset($_GET['logout'])) {
+    logout();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,6 +85,13 @@
             color: #0d6efd;
             font-size: 25px;
         }
+        
+        .department-heading {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -33,17 +99,17 @@
         <nav class="navbar navbar-expand-lg navbar-light bg-light p-3">
             <div class="container-fluid">
                 <span class="menu-icon" onclick="toggleMenu()">&#9776;</span>
-                <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; nav-left: 10px; z-index: 1000;">
-                    <a href="HrDashboard.html" class="d-block text-decoration-none text-dark mb-2">Dashboard</a>
-                    <a href="HrAddEmployee.html" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
-                    <a href="HrEmployeeDetails.html" class="d-block text-decoration-none text-dark mb-2">Employee Details</a>
-                    <a href="Attendance.html" class="d-block text-decoration-none text-dark mb-2">Attendance</a>
-                    <a href="HrProject.html" class="d-block text-decoration-none text-dark mb-2">Project</a>
-                    <a href="HrLeave.html" class="d-block text-decoration-none text-dark mb-2">Leave</a>
-                    <a href="HrSalary.html" class="d-block text-decoration-none text-dark mb-2">Salary</a>
+                <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; left: 10px; z-index: 1000;">
+                    <a href="HrDashboard.php" class="d-block text-decoration-none text-dark mb-2">Dashboard</a>
+                    <a href="HrAddEmployee.php" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
+                    <a href="HrEmployeeDetails.php" class="d-block text-decoration-none text-dark mb-2">Employee Details</a>
+                    <a href="Attendance.php" class="d-block text-decoration-none text-dark mb-2">Attendance</a>
+                    <a href="HrProject.php" class="d-block text-decoration-none text-dark mb-2">Project</a>
+                    <a href="HrLeave.php" class="d-block text-decoration-none text-dark mb-2">Leave</a>
+                    <a href="HrSalary.php" class="d-block text-decoration-none text-dark mb-2">Salary</a>
                     <a href="Report.php" class="d-block text-decoration-none text-dark mb-2">Report</a>
                     <a href="Company.php" class="d-block text-decoration-none text-dark mb-2">Company Details</a>
-                    <a href="HrCalendar.html" class="d-block text-decoration-none text-dark mb-2">Calendar</a>
+                    <a href="HrCalendar.php" class="d-block text-decoration-none text-dark mb-2">Calendar</a>
                 </div>
                 <script>
                     function toggleMenu() {
@@ -52,141 +118,161 @@
                     }
                 </script>
                 <span class="employee-name ms-auto me-3">
-                    <?php
-                        // Assuming $user_data is defined and contains user information
-                        echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']);
-                    ?>
+                    <?php echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']); ?>
                 </span>
                 
-                <button class="btn btn-primary me-2" onclick="logout()">Log Out</button>
-                <img src="assets/image.png" alt="Profile Icon" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" onclick="location.href='assets/image.png'">
+                <button class="btn btn-primary me-2" onclick="window.location.href='?logout=true'">Log Out</button>
+                <img src="assets/image.png" alt="Profile Icon" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" onclick="location.href='profile.php'">
             </div>
         </nav>
 
         <div class="employee-table-container">
             <div class="mb-4">
                 <form id="searchForm" class="d-flex justify-content-center">
-                    <input type="text" id="searchInput" class="form-control w-50" placeholder="Search by Employee ID">
+                    <input type="text" id="searchInput" class="form-control w-50" placeholder="Search by Employee ID, Name or Position">
                     <button type="button" class="btn btn-primary ms-2" onclick="searchEmployee()">Search</button>
+                    <button type="button" class="btn btn-secondary ms-2" onclick="resetSearch()">Reset</button>
                 </form>
             </div>
 
-            <script>
-                function searchEmployee() {
-                    const input = document.getElementById('searchInput').value.toLowerCase();
-                    const tables = document.querySelectorAll('.table tbody');
-
-                    tables.forEach(tbody => {
-                        const rows = tbody.querySelectorAll('tr');
-                        rows.forEach(row => {
-                            const employeeId = row.cells[0].textContent.toLowerCase();
-                            if (employeeId.includes(input)) {
-                                row.style.display = '';
-                            } else {
-                                row.style.display = 'none';
-                            }
-                        });
-                    });
-                }
-            </script>
-            <h2 class="text-center">Employee Details by Department</h2>
+            <h2 class="text-center mb-4">Employee Details by Department</h2>
 
             <div class="table-responsive">
-                <!-- HR Department Table -->
-                <h4>HR Department</h4>
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>Employee ID</th>
-                            <th>Full Name</th>
-                            <th>Position</th>
-                            <th>Email</th>
-                            <th>Contact Number</th>
-                            <th>Salary</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Example employee in HR Department -->
-                        <tr>
-                            <td>E12345</td>
-                            <td>John Doe</td>
-                            <td>HR Manager</td>
-                            <td>john.doe@example.com</td>
-                            <td>1234567890</td>
-                            <td>$50,000</td>
-                            <td>
-                                <a href="viewEmployeeDetails.html" class="btn btn-primary btn-sm">View</a>
-                            </td>
-                        </tr>
-                        <!-- More employee rows go here -->
-                    </tbody>
-                </table>
-
-                <!-- Sales Department Table -->
-                <h4>Sales Department</h4>
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>Employee ID</th>
-                            <th>Full Name</th>
-                            <th>Position</th>
-                            <th>Email</th>
-                            <th>Contact Number</th>
-                            <th>Salary</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Example employee in Sales Department -->
-                        <tr>
-                            <td>E12346</td>
-                            <td>Jane Smith</td>
-                            <td>Sales Executive</td>
-                            <td>jane.smith@example.com</td>
-                            <td>0987654321</td>
-                            <td>$40,000</td>
-                            <td>
-                                <a href="viewEmployeeDetails.html" class="btn btn-primary btn-sm">View</a>
-                            </td>
-                        </tr>
-                        <!-- More employee rows go here -->
-                    </tbody>
-                </table>
-
-                <!-- IT Department Table -->
-                <h4>IT Department</h4>
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>Employee ID</th>
-                            <th>Full Name</th>
-                            <th>Position</th>
-                            <th>Email</th>
-                            <th>Contact Number</th>
-                            <th>Salary</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Example employee in IT Department -->
-                        <tr>
-                            <td>E12347</td>
-                            <td>Michael Johnson</td>
-                            <td>Software Engineer</td>
-                            <td>michael.johnson@example.com</td>
-                            <td>1122334455</td>
-                            <td>$60,000</td>
-                            <td>
-                                <a href="viewEmployeeDetails.html" class="btn btn-primary btn-sm">View</a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <?php
+                // Loop through each department
+                if ($departments_result && $departments_result->num_rows > 0) {
+                    while ($department = $departments_result->fetch_assoc()) {
+                        $dept_id = $department['Department_ID'];
+                        $dept_name = $department['Department_Name'];
+                        
+                        // Query to get employees in current department
+                        $sql_employees = "SELECT e.Employee_ID, e.First_Name, e.Last_Name, 
+                                         e.Employee_Type as Position, e.Email, e.Contact_Number, e.Salary
+                                      FROM Employee e
+                                      WHERE e.Department_ID = ?
+                                      ORDER BY e.Last_Name, e.First_Name";
+                        
+                        $stmt = $conn->prepare($sql_employees);
+                        $stmt->bind_param("i", $dept_id);
+                        $stmt->execute();
+                        $employees_result = $stmt->get_result();
+                        
+                        // Only show department if it has employees
+                        if ($employees_result && $employees_result->num_rows > 0) {
+                            echo "<div class='department-heading'>{$dept_name} Department</div>";
+                            echo "<table class='table table-bordered table-striped mb-5'>";
+                            echo "<thead>
+                                    <tr>
+                                        <th>Employee ID</th>
+                                        <th>Full Name</th>
+                                        <th>Position</th>
+                                        <th>Email</th>
+                                        <th>Contact Number</th>
+                                        <th>Salary</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>";
+                            echo "<tbody>";
+                            
+                            while ($employee = $employees_result->fetch_assoc()) {
+                                echo "<tr>";
+                                echo "<td>" . htmlspecialchars($employee['Employee_ID']) . "</td>";
+                                echo "<td>" . htmlspecialchars($employee['First_Name'] . ' ' . $employee['Last_Name']) . "</td>";
+                                echo "<td>" . htmlspecialchars($employee['Position']) . "</td>";
+                                echo "<td>" . htmlspecialchars($employee['Email']) . "</td>";
+                                echo "<td>" . htmlspecialchars($employee['Contact_Number']) . "</td>";
+                                // Format salary with two decimal places
+                                echo "<td>$" . number_format($employee['Salary'], 2) . "</td>";
+                                echo "<td>
+                                        <a href='viewEmployeeDetails.php?id=" . $employee['Employee_ID'] . "' class='btn btn-primary btn-sm'>View</a>
+                                        <a href='editEmployee.php?id=" . $employee['Employee_ID'] . "' class='btn btn-warning btn-sm'>Edit</a>
+                                    </td>";
+                                echo "</tr>";
+                            }
+                            
+                            echo "</tbody>";
+                            echo "</table>";
+                        }
+                        
+                        $stmt->close();
+                    }
+                } else {
+                    echo "<div class='alert alert-info'>No departments found.</div>";
+                }
+                
+                // Close the database connection
+                $conn->close();
+                ?>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function searchEmployee() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const tables = document.querySelectorAll('.table tbody');
+            let anyResultsFound = false;
+
+            tables.forEach(tbody => {
+                const rows = tbody.querySelectorAll('tr');
+                let foundInTable = false;
+                
+                rows.forEach(row => {
+                    const employeeId = row.cells[0].textContent.toLowerCase();
+                    const name = row.cells[1].textContent.toLowerCase();
+                    const position = row.cells[2].textContent.toLowerCase();
+                    
+                    if (employeeId.includes(input) || name.includes(input) || position.includes(input)) {
+                        row.style.display = '';
+                        foundInTable = true;
+                        anyResultsFound = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Show/hide department headings based on search results
+                const departmentHeading = tbody.closest('.table').previousElementSibling;
+                if (departmentHeading && departmentHeading.classList.contains('department-heading')) {
+                    departmentHeading.style.display = foundInTable ? '' : 'none';
+                }
+                
+                // Show/hide tables based on search results
+                const table = tbody.closest('.table');
+                table.style.display = foundInTable ? '' : 'none';
+            });
+
+            if (!anyResultsFound && input !== '') {
+                alert('No employees found matching your search criteria.');
+            }
+        }
+
+        function resetSearch() {
+            document.getElementById('searchInput').value = '';
+            const tables = document.querySelectorAll('.table');
+            const headings = document.querySelectorAll('.department-heading');
+            
+            tables.forEach(table => {
+                table.style.display = '';
+                const rows = table.querySelectorAll('tbody tr');
+                rows.forEach(row => {
+                    row.style.display = '';
+                });
+            });
+            
+            headings.forEach(heading => {
+                heading.style.display = '';
+            });
+        }
+
+        // Allow search on Enter key press
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchEmployee();
+            }
+        });
+    </script>
 </body>
 </html>
