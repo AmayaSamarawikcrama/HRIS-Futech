@@ -6,7 +6,6 @@ $dbname = 'hris_db';
 $username = 'root';
 $password = '';
 
-
 $conn = new mysqli($host, $username, $password, $dbname);
 
 if($conn->connect_error)
@@ -20,23 +19,62 @@ if($conn->connect_error)
 //     exit();
 // }
 
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'] ?? '';
 
-$stmt = $conn->prepare("
-    SELECT e.*, d.Department_Name
-    FROM Employee e
-    LEFT JOIN Department d ON e.Department_ID = d.Department_ID
-    WHERE e.Employee_ID = ?
-");
+// Get user data
+if($user_id) {
+    $stmt = $conn->prepare("
+        SELECT e.*, d.Department_Name
+        FROM Employee e
+        LEFT JOIN Department d ON e.Department_ID = d.Department_ID
+        WHERE e.Employee_ID = ?
+    ");
 
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$user_data = $result->fetch_assoc();
+    $stmt->bind_param("s", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user_data = $result->fetch_assoc();
+    $stmt->close();
+}
 
-$stmt->close();
+// Get employee count
+$employee_count = 0;
+$query = "SELECT COUNT(*) as total FROM Employee";
+$result = $conn->query($query);
+if($result) {
+    $row = $result->fetch_assoc();
+    $employee_count = $row['total'];
+}
+
+// Get present today count
+$present_count = 0;
+$today = date('Y-m-d');
+$query = "SELECT COUNT(DISTINCT Employee_ID) as present FROM Attendance WHERE Date = '$today'";
+$result = $conn->query($query);
+if($result) {
+    $row = $result->fetch_assoc();
+    $present_count = $row['present'];
+}
+
+// Get absent count (all employees minus present)
+$absent_count = $employee_count - $present_count;
+
+// Get on leave count
+$leave_count = 0;
+$query = "SELECT COUNT(DISTINCT Employee_ID) as on_leave FROM Leave_Management 
+          WHERE '$today' BETWEEN Start_Date AND End_Date 
+          AND Approval_Status = 'Approved'";
+$result = $conn->query($query);
+if($result) {
+    $row = $result->fetch_assoc();
+    $leave_count = $row['on_leave'];
+}
+
+// Adjust absent count (subtract those on approved leave)
+$absent_count -= $leave_count;
+if($absent_count < 0) $absent_count = 0;
+
 $conn->close(); 
-
 ?>
 
 <!DOCTYPE html>
@@ -56,6 +94,15 @@ $conn->close();
             color: #0d6efd;
             font-size: 25px;
         }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .stat-label {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 <body>
@@ -64,13 +111,15 @@ $conn->close();
             <div class="container-fluid">
                 <span class="menu-icon" onclick="toggleMenu()">&#9776;</span>
                 <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; nav-left: 10px; z-index: 1000;">
-                    <a href="Dashboard.php" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
-                    <a href="View Employee.php" class="d-block text-decoration-none text-dark mb-2">View Employee</a>
+                    <a href="HrAddEmployee.html" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
+                    <a href="HrEmployeeDetails.html" class="d-block text-decoration-none text-dark mb-2">Employee Details</a>
                     <a href="Attendance.html" class="d-block text-decoration-none text-dark mb-2">Attendance</a>
-                    <a href="Project.php" class="d-block text-decoration-none text-dark mb-2">Project</a>
-                    <a href="Leave.php" class="d-block text-decoration-none text-dark mb-2">Leave</a>
-                    <a href="Salary.php" class="d-block text-decoration-none text-dark mb-2">Salary</a>
+                    <a href="HrProject.html" class="d-block text-decoration-none text-dark mb-2">Project</a>
+                    <a href="HrLeave.html" class="d-block text-decoration-none text-dark mb-2">Leave</a>
+                    <a href="HrSalary.html" class="d-block text-decoration-none text-dark mb-2">Salary</a>
                     <a href="Report.php" class="d-block text-decoration-none text-dark mb-2">Report</a>
+                    <a href="Company.html" class="d-block text-decoration-none text-dark mb-2">Company</a>
+                    <a href="HrCalendar.html" class="d-block text-decoration-none text-dark mb-2">Calendar</a>
                 </div>
                 <script>
                     function toggleMenu() {
@@ -80,8 +129,10 @@ $conn->close();
                 </script>
                 <span class="employee-name ms-auto me-3">
                     <?php
-                        // Assuming $user_data is defined and contains user information
-                        echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']);
+                        // Displaying user name if available
+                        if(isset($user_data)) {
+                            echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']);
+                        }
                     ?>
                 </span>
                 
@@ -93,41 +144,52 @@ $conn->close();
         <div class="container mt-4">
             <div class="row g-3">
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <div class="card text-center p-4 fs-5" style="height: 150px;"><b>Company Employees</b></div>
+                    <div class="card text-center p-4" style="height: 150px;">
+                        <div class="stat-number"><?php echo $employee_count; ?></div>
+                        <div class="stat-label">Company Employees</div>
+                    </div>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <div class="card text-center p-4 fs-5" style="height: 150px;"><b>Present Today</b></div>
+                    <div class="card text-center p-4" style="height: 150px;">
+                        <div class="stat-number"><?php echo $present_count; ?></div>
+                        <div class="stat-label">Present Today</div>
+                    </div>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <div class="card text-center p-4 fs-5" style="height: 150px;"><b>Absant Today</b></div>
+                    <div class="card text-center p-4" style="height: 150px;">
+                        <div class="stat-number"><?php echo $absent_count; ?></div>
+                        <div class="stat-label">Absent Today</div>
+                    </div>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <div class="card text-center p-4 fs-5" style="height: 150px;"><b>On Leave Today</b></div>
+                    <div class="card text-center p-4" style="height: 150px;">
+                        <div class="stat-number"><?php echo $leave_count; ?></div>
+                        <div class="stat-label">On Leave Today</div>
+                    </div>
                 </div>
-            </div>
             </div>
 
             <div class="row mt-4 g-2">
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='View_Employee.php'">Employee Details</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrEmployeeDetails.html'">Employee Details</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Add_Employee.php'">Add Employee</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrAddEmployee.html'">Add Employee</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='project.php'">Project</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrProject.php'">Project</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
                     <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Attendance.html'">Attendance</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Leave.php'">Leave State</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrLeave.php'">Leave State</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Salary.php'">Salary Status</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrSalary.html'">Salary Status</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Employee Performance.html'">Employee Performance</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrProject.html'"> Our Projects</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
                     <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Report.php'">Report</button>
@@ -136,7 +198,7 @@ $conn->close();
                     <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Company.html'">Company</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Calendar.html'">Calendar</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrCalendar.html'">Calendar</button>
                 </div>
             </div>
         </div>

@@ -120,13 +120,15 @@ $user_data = ['First_Name' => 'Admin', 'Last_Name' => 'User'];
                 <span class="menu-icon" onclick="toggleMenu()">&#9776;</span>
                 <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; left: 10px; z-index: 1000;">
                     <a href="HrDashboard.html" class="d-block text-decoration-none text-dark mb-2">Dashboard</a>
-                    <a href="Add Employee.php" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
-                    <a href="View Employee.php" class="d-block text-decoration-none text-dark mb-2">View Employee</a>
+                    <a href="HrAddEmployee.html" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
+                    <a href="HrEmployeeDetails.html" class="d-block text-decoration-none text-dark mb-2">Employee Details</a>
                     <a href="Attendance.html" class="d-block text-decoration-none text-dark mb-2">Attendance</a>
-                    <a href="Project.php" class="d-block text-decoration-none text-dark mb-2">Project</a>
-                    <a href="Leave.php" class="d-block text-decoration-none text-dark mb-2">Leave</a>
-                    <a href="Salary.php" class="d-block text-decoration-none text-dark mb-2">Salary</a>
+                    <a href="HrProject.html" class="d-block text-decoration-none text-dark mb-2">Project</a>
+                    <a href="HrLeave.html" class="d-block text-decoration-none text-dark mb-2">Leave</a>
+                    <a href="HrSalary.html" class="d-block text-decoration-none text-dark mb-2">Salary</a>
                     <a href="Report.php" class="d-block text-decoration-none text-dark mb-2">Report</a>
+                    <a href="Company.php" class="d-block text-decoration-none text-dark mb-2">Company Details</a>
+                    <a href="HrCalendar.html" class="d-block text-decoration-none text-dark mb-2">Calendar</a>
                 </div>
                 <script>
                     function toggleMenu() {

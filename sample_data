@@ -4,8 +4,7 @@ INSERT INTO Department (Department_Name, Location) VALUES
 ('Engineering', 'Floor 3, North Wing'),
 ('Marketing', 'Floor 2, West Wing');
 
--- Insert employees
--- Note: Password should be hashed in a real system
+
 INSERT INTO Employee (
     Password, 
     Employee_Type, 
