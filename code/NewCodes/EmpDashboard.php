@@ -108,7 +108,7 @@ if (isset($_SESSION['user_id'])) {
                 <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Company.php'">Company Details</button>
             </div>
             <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Calendar.php'">Calendar</button>
+                <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='EmpCalendar.php'">Calendar</button>
             </div>
         </div>
     </div>
