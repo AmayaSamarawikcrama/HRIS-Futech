@@ -92,13 +92,13 @@ $employee_id = $prefix . str_pad($max_id, 4, '0', STR_PAD_LEFT);
     
     try {
         // Prepare and execute the SQL statement
-        $query = "INSERT INTO Employee (
+        $query = "INSERT INTO Employee (Employee_ID,
                     Password, Employee_Type, First_Name, Last_Name, 
                     Date_of_Birth, Gender, Address, Contact_Number, 
                     Email, Qualification, Insurance, Blood_Type, 
                     Marital_Status, Hire_Date, Salary, Department_ID, 
                     Manager_ID, file_name
-                ) VALUES (
+                ) VALUES (?,
                     ?, ?, ?, ?, 
                     ?, ?, ?, ?, 
                     ?, ?, ?, ?, 
@@ -108,8 +108,8 @@ $employee_id = $prefix . str_pad($max_id, 4, '0', STR_PAD_LEFT);
         
         $stmt = $conn->prepare($query);
         $stmt->bind_param(
-            "sssssssssssssdiss",
-            $password, $employee_type, $first_name, $last_name,
+            "ssssssssssssssdiss",
+            $employee_id,$password, $employee_type, $first_name, $last_name,
             $dob, $gender, $address, $contact_no,
             $email, $qualification, $insurance, $blood_type,
             $marital_status, $hire_date, $salary, $department_id,
