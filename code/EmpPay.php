@@ -49,7 +49,7 @@ $result = $conn->query($sql);
         th { background-color: #f4f4f4; }
         .container { max-width: 600px; margin: auto; }
         input[type="text"], input[type="number"], input[type="submit"] { width: 100%; padding: 8px; margin: 5px 0; }
-        input[type="submit"] { background-color: #28a745; color: white; border: none; cursor: pointer; }
+        input[type="submit"] { background-color:rgb(55, 21, 207); color: white; border: none; cursor: pointer; }
         input[type="submit"]:hover { background-color: #218838; }
     </style>
 </head>
