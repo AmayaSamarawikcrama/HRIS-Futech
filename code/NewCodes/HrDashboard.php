@@ -111,15 +111,15 @@ $conn->close();
             <div class="container-fluid">
                 <span class="menu-icon" onclick="toggleMenu()">&#9776;</span>
                 <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; nav-left: 10px; z-index: 1000;">
-                    <a href="HrAddEmployee.html" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
-                    <a href="HrEmployeeDetails.html" class="d-block text-decoration-none text-dark mb-2">Employee Details</a>
-                    <a href="Attendance.html" class="d-block text-decoration-none text-dark mb-2">Attendance</a>
-                    <a href="HrProject.html" class="d-block text-decoration-none text-dark mb-2">Project</a>
-                    <a href="HrLeave.html" class="d-block text-decoration-none text-dark mb-2">Leave</a>
-                    <a href="HrSalary.html" class="d-block text-decoration-none text-dark mb-2">Salary</a>
+                    <a href="HrAddEmployee.php" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
+                    <a href="HrEmployeeDetails.php" class="d-block text-decoration-none text-dark mb-2">Employee Details</a>
+                    <a href="Attendance.php" class="d-block text-decoration-none text-dark mb-2">Attendance</a>
+                    <a href="HrProject.php" class="d-block text-decoration-none text-dark mb-2">Project</a>
+                    <a href="HrLeave.php" class="d-block text-decoration-none text-dark mb-2">Leave</a>
+                    <a href="HrSalary.php" class="d-block text-decoration-none text-dark mb-2">Salary</a>
                     <a href="Report.php" class="d-block text-decoration-none text-dark mb-2">Report</a>
-                    <a href="Company.html" class="d-block text-decoration-none text-dark mb-2">Company</a>
-                    <a href="HrCalendar.html" class="d-block text-decoration-none text-dark mb-2">Calendar</a>
+                    <a href="Company.php" class="d-block text-decoration-none text-dark mb-2">Company</a>
+                    <a href="HrCalendar.php" class="d-block text-decoration-none text-dark mb-2">Calendar</a>
                 </div>
                 <script>
                     function toggleMenu() {
@@ -174,7 +174,7 @@ $conn->close();
                     <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrEmployeeDetails.html'">Employee Details</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrAddEmployee.html'">Add Employee</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrAddEmployee.php'">Add Employee</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
                     <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrProject.php'">Project</button>
