@@ -1,4 +1,5 @@
 <?php
+session_start();
 $host = 'localhost';
 $dbname = 'hris_db';
 $username = 'root';
@@ -15,6 +16,31 @@ if($conn->connect_error) {
 // Initialize messages
 $success_message = '';
 $error_message = '';
+
+// Check if user is logged in
+if(!isset($_SESSION['user_id'])) {
+    // Redirect to login page if not logged in
+    header("Location: login.php");
+    exit;
+}
+
+// Get logged-in user data
+$user_data = [];
+$user_id = $_SESSION['user_id'];
+$sql = "SELECT First_Name, Last_Name FROM Employee WHERE Employee_ID = '$user_id'";
+$result = $conn->query($sql);
+if($result->num_rows > 0) {
+    $user_data = $result->fetch_assoc();
+} else {
+    // If user data not found, use session data if available
+    if(isset($_SESSION['First_Name']) && isset($_SESSION['Last_Name'])) {
+        $user_data['First_Name'] = $_SESSION['First_Name'];
+        $user_data['Last_Name'] = $_SESSION['Last_Name'];
+    } else {
+        $user_data['First_Name'] = 'Unknown';
+        $user_data['Last_Name'] = 'User';
+    }
+}
 
 // Handle form submissions
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -64,9 +90,6 @@ if($result->num_rows > 0) {
         $events[] = $row;
     }
 }
-
-// For demonstration, assuming we have user data
-$user_data = ['First_Name' => 'Admin', 'Last_Name' => 'User'];
 ?>
 
 <!DOCTYPE html>
