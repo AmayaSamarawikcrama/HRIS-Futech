@@ -549,6 +549,23 @@ END;
 DELIMITER ;
 
 
+-- Project Table (standalone)
+CREATE TABLE Project (
+    Project_ID INT PRIMARY KEY AUTO_INCREMENT,
+    Project_Name VARCHAR(100) NOT NULL,
+    Description TEXT,
+    Start_Date DATE NOT NULL,
+    End_Date DATE NOT NULL,
+    Budget DECIMAL(15,2) CHECK (Budget >= 0),
+    Status ENUM('Planning', 'In Progress', 'On Hold', 'Completed', 'Cancelled') DEFAULT 'Planning',
+    Department_ID INT,
+    Manager_ID VARCHAR(10),
+    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (Department_ID) REFERENCES Department(Department_ID) ON DELETE SET NULL,
+    FOREIGN KEY (Manager_ID) REFERENCES Employee(Employee_ID) ON DELETE SET NULL
+);
+
+
 
 
 
