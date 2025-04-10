@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if(!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
@@ -15,17 +15,77 @@ function getDBConnection() {
 }
 
 // Generate CSRF token if not exists
-if(empty($_SESSION['csrf_token'])) {
+if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
 // Handle logout
-if(isset($_GET['logout'])) {
+if (isset($_GET['logout'])) {
     session_destroy();
     header("Location: login.php");
     exit();
 }
 
+// Handle PDF generation request
+if (isset($_GET['generate_pdf'])) {
+    require('./fdpdf186/fpdf.php');
+    
+    $conn = getDBConnection();
+    $user_id = $_SESSION['user_id'];
+    
+    // Get complete employee data
+    $sql = "SELECT e.*, d.Department_Name 
+            FROM Employee e
+            LEFT JOIN Department d ON e.Department_ID = d.Department_ID
+            WHERE e.Employee_ID = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $employee_data = $result->fetch_assoc();
+    $stmt->close();
+    $conn->close();
+
+    // Create PDF
+    $pdf = new FPDF('P', 'mm', 'A4');
+    $pdf->AddPage();
+    
+    // Title
+    $pdf->SetFont('Arial', 'B', 16);
+    $pdf->Cell(0, 10, 'EMPLOYEE DETAILS', 0, 1, 'C');
+    $pdf->Ln(10);
+    
+    // Employee Information
+    $pdf->SetFont('Arial', '', 12);
+    
+    $fields = [
+        'First Name' => $employee_data['First_Name'],
+        'Last Name' => $employee_data['Last_Name'],
+        'Email' => $employee_data['Email'],
+        'Phone Number' => $employee_data['Contact_Number'],
+        'Address' => $employee_data['Address'],
+        'Date of Birth' => $employee_data['Date_of_Birth'],
+        'Gender' => $employee_data['Gender'],
+        'Nationality' => $employee_data['Nationality'],
+        'Department' => $employee_data['Department_Name'],
+        'Position' => $employee_data['Employee_Type'],
+        'Salary' => '$' . number_format($employee_data['Salary'], 2),
+        'Hire Date' => $employee_data['Hire_Date'],
+        'Insurance' => $employee_data['Insurance_Info'],
+        'Blood Type' => $employee_data['Blood_Type'],
+        'Marital Status' => $employee_data['Marital_Status']
+    ];
+    
+    foreach ($fields as $label => $value) {
+        $pdf->Cell(50, 10, $label . ':', 0, 0);
+        $pdf->Cell(0, 10, $value, 0, 1);
+    }
+    
+    $pdf->Output('D', 'employee_details_' . $user_id . '.pdf');
+    exit();
+}
+
+// Normal page rendering
 $conn = getDBConnection();
 
 // Get current user data
@@ -42,15 +102,15 @@ $stmt_user->close();
 $sql_departments = "SELECT Department_ID, Department_Name FROM Department ORDER BY Department_Name";
 $departments_result = $conn->query($sql_departments);
 
-// Handle POST requests (if any form submissions)
-if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit'])) {
-    if(!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+// Handle POST requests
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit'])) {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
         $_SESSION['message'] = "Security verification failed. Please try again.";
         $_SESSION['message_type'] = "error";
         header("Location: HrEmployeeDetails.php");
         exit();
     }
-    // Handle any form submissions here
+    // Handle form submissions here
 }
 ?>
 
@@ -93,6 +153,13 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit'])) {
         .employee-name {
             font-weight: bold;
             color: #dc3545;
+        }
+        
+        .pdf-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
         }
     </style>
 </head>
@@ -197,6 +264,11 @@ if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit'])) {
                 ?>
             </div>
         </div>
+        
+        <!-- Floating PDF button -->
+        <a href="?generate_pdf=true" class="btn btn-danger pdf-btn">
+            <i class="bi bi-file-earmark-pdf"></i> Generate PDF
+        </a>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
