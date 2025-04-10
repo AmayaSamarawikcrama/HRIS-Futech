@@ -1,3 +1,29 @@
+<?php
+session_start();
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// Database connection
+$conn = new mysqli('localhost', 'root', '', 'hris_db');
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Get user data for displaying in nav
+$user_id = $_SESSION['user_id'];
+$query = "SELECT First_Name, Last_Name FROM Employee WHERE Employee_ID = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param("s", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$user_data = $result->fetch_assoc();
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
