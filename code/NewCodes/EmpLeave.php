@@ -54,11 +54,14 @@ if ($result->num_rows > 0) {
 $stmt->close();
 
 // Fetch employee name for display
+$employee_name = array('First_Name' => '', 'Last_Name' => '');
 $stmt = $conn->prepare("SELECT First_Name, Last_Name FROM Employee WHERE Employee_ID = ?");
 $stmt->bind_param("s", $_SESSION['user_id']);
 $stmt->execute();
 $result = $stmt->get_result();
-$employee_name = $result->fetch_assoc();
+if ($result->num_rows > 0) {
+    $employee_name = $result->fetch_assoc();
+}
 $stmt->close();
 
 $conn->close();
@@ -104,6 +107,10 @@ $conn->close();
             font-size: 1.2rem;
             margin-right: 5px;
         }
+        .user-welcome {
+            font-size: 1.2rem;
+            margin-right: 15px;
+        }
     </style>
 </head>
 <body>
@@ -122,7 +129,9 @@ $conn->close();
                 <a href="Company.php" class="dropdown-item">Company Details</a>
                 <a href="Calendar.php" class="dropdown-item">Calendar</a>
             </div>
-            <button class="btn btn-primary me-2 ms-auto" onclick="logout()">Log Out</button>
+            <!-- Add the welcome message here -->
+            <span class="user-welcome ms-auto"><?php echo isset($employee_name['First_Name']) ? htmlspecialchars($employee_name['First_Name'] . ' ' . $employee_name['Last_Name']) : 'User'; ?></span>
+            <button class="btn btn-primary me-2" onclick="logout()">Log Out</button>
             <img src="assets/image.png" alt="Profile Icon" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" onclick="location.href='assets/image.png'">
         </div>
     </nav>
@@ -153,7 +162,7 @@ $conn->close();
                             <div class="mb-3">
                                 <label for="employeeName" class="form-label">Employee Name</label>
                                 <input type="text" class="form-control" id="employeeName" 
-                                       value="<?php echo htmlspecialchars($employee_name['First_Name'] . ' ' . htmlspecialchars($employee_name['Last_Name'])); ?>" readonly>
+                                       value="<?php echo isset($employee_name['First_Name']) ? htmlspecialchars($employee_name['First_Name'] . ' ' . $employee_name['Last_Name']) : 'User not found'; ?>" readonly>
                             </div>
 
                             <div class="mb-3">
@@ -269,7 +278,7 @@ $conn->close();
                                             ?>
                                             <span class="badge rounded-pill <?php echo $badge_class; ?>">
                                                 <i class="fas <?php echo $icon_class; ?> status-icon"></i>
-                                                <?php echo htmlspecialchars($request['Approval_Status']); ?>
+                                                <?php echo htmlspecialchars($request['Approval_Status'] ?? 'Pending'); ?>
                                             </span>
                                         </td>
                                         <td>
@@ -317,7 +326,7 @@ $conn->close();
                                                         <h6>Status</h6>
                                                         <span class="badge rounded-pill <?php echo $badge_class; ?>">
                                                             <i class="fas <?php echo $icon_class; ?> status-icon"></i>
-                                                            <?php echo htmlspecialchars($request['Approval_Status']); ?>
+                                                            <?php echo htmlspecialchars($request['Approval_Status'] ?? 'Pending'); ?>
                                                         </span>
                                                     </div>
                                                     <div class="mb-3">
@@ -331,7 +340,7 @@ $conn->close();
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                    <?php if ($request['Approval_Status'] === 'Pending'): ?>
+                                                    <?php if (($request['Approval_Status'] ?? 'Pending') === 'Pending'): ?>
                                                         <button type="button" class="btn btn-danger">Cancel Request</button>
                                                     <?php endif; ?>
                                                 </div>

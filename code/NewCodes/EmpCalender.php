@@ -1,4 +1,5 @@
 <?php
+session_start();
 $host = 'localhost';
 $dbname = 'hris_db';
 $username = 'root';
@@ -10,6 +11,31 @@ $conn = new mysqli($host, $username, $password, $dbname);
 // Check connection
 if($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
+}
+
+// Check if user is logged in
+if(!isset($_SESSION['user_id'])) {
+    // Redirect to login page if not logged in
+    header("Location: login.php");
+    exit;
+}
+
+// Get logged-in user data
+$user_data = [];
+$user_id = $_SESSION['user_id'];
+$sql = "SELECT First_Name, Last_Name FROM Employee WHERE Employee_ID = '$user_id'";
+$result = $conn->query($sql);
+if($result->num_rows > 0) {
+    $user_data = $result->fetch_assoc();
+} else {
+    // If user data not found, use session data if available
+    if(isset($_SESSION['First_Name']) && isset($_SESSION['Last_Name'])) {
+        $user_data['First_Name'] = $_SESSION['First_Name'];
+        $user_data['Last_Name'] = $_SESSION['Last_Name'];
+    } else {
+        $user_data['First_Name'] = 'Unknown';
+        $user_data['Last_Name'] = 'User';
+    }
 }
 
 // Fetch events from database
@@ -29,7 +55,7 @@ if($result->num_rows > 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HR Team Calendar</title>
+    <title>Employee Calendar</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <!-- FullCalendar CSS -->
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
@@ -85,7 +111,9 @@ if($result->num_rows > 0) {
                         menuList.classList.toggle('d-none');
                     }
                 </script>
-                <span class="employee-name ms-auto me-3">Admin</span>
+                <span class="employee-name ms-auto me-3">
+                    <?php echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']); ?>
+                </span>
                 <button class="btn btn-primary" onclick="logout()">Log Out</button>
             </div>
         </nav>
