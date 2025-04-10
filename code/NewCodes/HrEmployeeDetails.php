@@ -28,7 +28,13 @@ if (isset($_GET['logout'])) {
 
 // Handle PDF generation request
 if (isset($_GET['generate_pdf']) && isset($_GET['employee_id'])) {
-    require('./fdpdf186/fpdf.php');
+    // Make sure FPDF library is available
+    $fpdf_path = './fpdf186/fpdf.php';
+    if (!file_exists($fpdf_path)) {
+        die("FPDF library not found at path: $fpdf_path");
+    }
+    
+    require($fpdf_path);
     
     $conn = getDBConnection();
     $employee_id = $_GET['employee_id'];
@@ -39,7 +45,7 @@ if (isset($_GET['generate_pdf']) && isset($_GET['employee_id'])) {
             LEFT JOIN Department d ON e.Department_ID = d.Department_ID
             WHERE e.Employee_ID = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $employee_id); // Changed to string parameter
+    $stmt->bind_param("s", $employee_id);
     $stmt->execute();
     $result = $stmt->get_result();
     
@@ -107,169 +113,174 @@ if (isset($_GET['generate_pdf']) && isset($_GET['employee_id'])) {
     
     $conn->close();
 
-    // Create PDF with FPDF
-    $pdf = new FPDF('P', 'mm', 'A4');
-    $pdf->AddPage();
-    
-    // Header with company logo and title
-    $pdf->SetFont('Arial', 'B', 18);
-    $pdf->Cell(0, 10, 'EMPLOYEE DETAILS REPORT', 0, 1, 'C');
-    $pdf->SetFont('Arial', 'I', 10);
-    $pdf->Cell(0, 5, 'Generated on: ' . date('Y-m-d H:i:s'), 0, 1, 'C');
-    $pdf->Ln(10);
-    
-    // Employee Basic Information
-    $pdf->SetFont('Arial', 'B', 14);
-    $pdf->SetFillColor(220, 220, 220);
-    $pdf->Cell(0, 10, 'PERSONAL INFORMATION', 1, 1, 'L', true);
-    
-    $pdf->SetFont('Arial', '', 11);
-    
-    // Personal Information
-    $pdf->Cell(60, 8, 'Employee ID:', 1);
-    $pdf->Cell(130, 8, $employee_data['Employee_ID'], 1, 1);
-    
-    $pdf->Cell(60, 8, 'Full Name:', 1);
-    $pdf->Cell(130, 8, $employee_data['First_Name'] . ' ' . $employee_data['Last_Name'], 1, 1);
-    
-    $pdf->Cell(60, 8, 'Date of Birth:', 1);
-    $pdf->Cell(130, 8, $employee_data['Date_of_Birth'], 1, 1);
-    
-    $pdf->Cell(60, 8, 'Gender:', 1);
-    $pdf->Cell(130, 8, $employee_data['Gender'], 1, 1);
-    
-    $pdf->Cell(60, 8, 'Blood Type:', 1);
-    $pdf->Cell(130, 8, $employee_data['Blood_Type'] ?? 'Not Specified', 1, 1);
-    
-    $pdf->Cell(60, 8, 'Marital Status:', 1);
-    $pdf->Cell(130, 8, $employee_data['Marital_Status'], 1, 1);
-    
-    $pdf->Cell(60, 8, 'Address:', 1);
-    $pdf->Cell(130, 8, $employee_data['Address'], 1, 1);
-    
-    $pdf->Cell(60, 8, 'Contact Number:', 1);
-    $pdf->Cell(130, 8, $employee_data['Contact_Number'], 1, 1);
-    
-    $pdf->Cell(60, 8, 'Email:', 1);
-    $pdf->Cell(130, 8, $employee_data['Email'], 1, 1);
-    
-    // Work Information
-    $pdf->Ln(5);
-    $pdf->SetFont('Arial', 'B', 14);
-    $pdf->Cell(0, 10, 'EMPLOYMENT INFORMATION', 1, 1, 'L', true);
-    
-    $pdf->SetFont('Arial', '', 11);
-    $pdf->Cell(60, 8, 'Employee Type:', 1);
-    $pdf->Cell(130, 8, $employee_data['Employee_Type'], 1, 1);
-    
-    $pdf->Cell(60, 8, 'Department:', 1);
-    $pdf->Cell(130, 8, $employee_data['Department_Name'] ?? 'Not Assigned', 1, 1);
-    
-    $pdf->Cell(60, 8, 'Hire Date:', 1);
-    $pdf->Cell(130, 8, $employee_data['Hire_Date'], 1, 1);
-    
-    $pdf->Cell(60, 8, 'Salary:', 1);
-    $pdf->Cell(130, 8, '$' . number_format($employee_data['Salary'], 2), 1, 1);
-    
-    $pdf->Cell(60, 8, 'Insurance:', 1);
-    $pdf->Cell(130, 8, $employee_data['Insurance'] ?? 'Not Specified', 1, 1);
-    
-    $pdf->Cell(60, 8, 'Qualification:', 1);
-    $pdf->Cell(130, 8, $employee_data['Qualification'] ?? 'Not Specified', 1, 1);
-    
-    // Performance Information (if available)
-    if ($performance_data) {
-        $pdf->Ln(5);
+    try {
+        // Create PDF with FPDF
+        $pdf = new FPDF('P', 'mm', 'A4');
+        $pdf->AddPage();
+        
+        // Header with company logo and title
+        $pdf->SetFont('Arial', 'B', 18);
+        $pdf->Cell(0, 10, 'EMPLOYEE DETAILS REPORT', 0, 1, 'C');
+        $pdf->SetFont('Arial', 'I', 10);
+        $pdf->Cell(0, 5, 'Generated on: ' . date('Y-m-d H:i:s'), 0, 1, 'C');
+        $pdf->Ln(10);
+        
+        // Employee Basic Information
         $pdf->SetFont('Arial', 'B', 14);
-        $pdf->Cell(0, 10, 'PERFORMANCE EVALUATION', 1, 1, 'L', true);
+        $pdf->SetFillColor(220, 220, 220);
+        $pdf->Cell(0, 10, 'PERSONAL INFORMATION', 1, 1, 'L', true);
         
         $pdf->SetFont('Arial', '', 11);
-        $pdf->Cell(60, 8, 'Performance Rating:', 1);
-        $pdf->Cell(130, 8, $performance_data['Performance_Rating'], 1, 1);
         
-        $pdf->Cell(60, 8, 'Strengths:', 1);
-        $pdf->Cell(130, 8, $performance_data['Strengths'], 1, 1);
+        // Personal Information
+        $pdf->Cell(60, 8, 'Employee ID:', 1);
+        $pdf->Cell(130, 8, $employee_data['Employee_ID'], 1, 1);
         
-        $pdf->Cell(60, 8, 'Recommendations:', 1);
-        $pdf->Cell(130, 8, $performance_data['Recommendations'], 1, 1);
-    }
-    
-    // Attendance Information (if available)
-    if (count($attendance_data) > 0) {
+        $pdf->Cell(60, 8, 'Full Name:', 1);
+        $pdf->Cell(130, 8, $employee_data['First_Name'] . ' ' . $employee_data['Last_Name'], 1, 1);
+        
+        $pdf->Cell(60, 8, 'Date of Birth:', 1);
+        $pdf->Cell(130, 8, $employee_data['Date_of_Birth'], 1, 1);
+        
+        $pdf->Cell(60, 8, 'Gender:', 1);
+        $pdf->Cell(130, 8, $employee_data['Gender'], 1, 1);
+        
+        $pdf->Cell(60, 8, 'Blood Type:', 1);
+        $pdf->Cell(130, 8, $employee_data['Blood_Type'] ?? 'Not Specified', 1, 1);
+        
+        $pdf->Cell(60, 8, 'Marital Status:', 1);
+        $pdf->Cell(130, 8, $employee_data['Marital_Status'], 1, 1);
+        
+        $pdf->Cell(60, 8, 'Address:', 1);
+        $pdf->Cell(130, 8, $employee_data['Address'], 1, 1);
+        
+        $pdf->Cell(60, 8, 'Contact Number:', 1);
+        $pdf->Cell(130, 8, $employee_data['Contact_Number'], 1, 1);
+        
+        $pdf->Cell(60, 8, 'Email:', 1);
+        $pdf->Cell(130, 8, $employee_data['Email'], 1, 1);
+        
+        // Work Information
         $pdf->Ln(5);
         $pdf->SetFont('Arial', 'B', 14);
-        $pdf->Cell(0, 10, 'RECENT ATTENDANCE', 1, 1, 'L', true);
-        
-        $pdf->SetFont('Arial', 'B', 11);
-        $pdf->Cell(40, 8, 'Date', 1);
-        $pdf->Cell(40, 8, 'Log In Time', 1);
-        $pdf->Cell(40, 8, 'Log Out Time', 1);
-        $pdf->Cell(70, 8, 'Work Hours', 1, 1);
+        $pdf->Cell(0, 10, 'EMPLOYMENT INFORMATION', 1, 1, 'L', true);
         
         $pdf->SetFont('Arial', '', 11);
-        foreach ($attendance_data as $attendance) {
-            $pdf->Cell(40, 8, $attendance['Date'], 1);
-            $pdf->Cell(40, 8, $attendance['Log_In_Time'], 1);
-            $pdf->Cell(40, 8, $attendance['Log_Out_Time'] ?? 'Not Logged Out', 1);
-            $pdf->Cell(70, 8, $attendance['Work_Hours'] ?? 'N/A', 1, 1);
+        $pdf->Cell(60, 8, 'Employee Type:', 1);
+        $pdf->Cell(130, 8, $employee_data['Employee_Type'], 1, 1);
+        
+        $pdf->Cell(60, 8, 'Department:', 1);
+        $pdf->Cell(130, 8, $employee_data['Department_Name'] ?? 'Not Assigned', 1, 1);
+        
+        $pdf->Cell(60, 8, 'Hire Date:', 1);
+        $pdf->Cell(130, 8, $employee_data['Hire_Date'], 1, 1);
+        
+        $pdf->Cell(60, 8, 'Salary:', 1);
+        $pdf->Cell(130, 8, '$' . number_format($employee_data['Salary'], 2), 1, 1);
+        
+        $pdf->Cell(60, 8, 'Insurance:', 1);
+        $pdf->Cell(130, 8, $employee_data['Insurance'] ?? 'Not Specified', 1, 1);
+        
+        $pdf->Cell(60, 8, 'Qualification:', 1);
+        $pdf->Cell(130, 8, $employee_data['Qualification'] ?? 'Not Specified', 1, 1);
+        
+        // Performance Information (if available)
+        if ($performance_data) {
+            $pdf->Ln(5);
+            $pdf->SetFont('Arial', 'B', 14);
+            $pdf->Cell(0, 10, 'PERFORMANCE EVALUATION', 1, 1, 'L', true);
+            
+            $pdf->SetFont('Arial', '', 11);
+            $pdf->Cell(60, 8, 'Performance Rating:', 1);
+            $pdf->Cell(130, 8, $performance_data['Performance_Rating'], 1, 1);
+            
+            $pdf->Cell(60, 8, 'Strengths:', 1);
+            $pdf->Cell(130, 8, $performance_data['Strengths'], 1, 1);
+            
+            $pdf->Cell(60, 8, 'Recommendations:', 1);
+            $pdf->Cell(130, 8, $performance_data['Recommendations'], 1, 1);
         }
-    }
-    
-    // Leave Information (if available)
-    if (count($leave_data) > 0) {
-        $pdf->Ln(5);
-        $pdf->SetFont('Arial', 'B', 14);
-        $pdf->Cell(0, 10, 'LEAVE RECORDS', 1, 1, 'L', true);
         
-        $pdf->SetFont('Arial', 'B', 11);
-        $pdf->Cell(40, 8, 'Leave Type', 1);
-        $pdf->Cell(40, 8, 'Start Date', 1);
-        $pdf->Cell(40, 8, 'End Date', 1);
-        $pdf->Cell(70, 8, 'Status', 1, 1);
-        
-        $pdf->SetFont('Arial', '', 11);
-        foreach ($leave_data as $leave) {
-            $pdf->Cell(40, 8, $leave['Leave_Type'], 1);
-            $pdf->Cell(40, 8, $leave['Start_Date'], 1);
-            $pdf->Cell(40, 8, $leave['End_Date'], 1);
-            $pdf->Cell(70, 8, $leave['Approval_Status'], 1, 1);
+        // Attendance Information (if available)
+        if (count($attendance_data) > 0) {
+            $pdf->Ln(5);
+            $pdf->SetFont('Arial', 'B', 14);
+            $pdf->Cell(0, 10, 'RECENT ATTENDANCE', 1, 1, 'L', true);
+            
+            $pdf->SetFont('Arial', 'B', 11);
+            $pdf->Cell(40, 8, 'Date', 1);
+            $pdf->Cell(40, 8, 'Log In Time', 1);
+            $pdf->Cell(40, 8, 'Log Out Time', 1);
+            $pdf->Cell(70, 8, 'Work Hours', 1, 1);
+            
+            $pdf->SetFont('Arial', '', 11);
+            foreach ($attendance_data as $attendance) {
+                $pdf->Cell(40, 8, $attendance['Date'], 1);
+                $pdf->Cell(40, 8, $attendance['Log_In_Time'], 1);
+                $pdf->Cell(40, 8, $attendance['Log_Out_Time'] ?? 'Not Logged Out', 1);
+                $pdf->Cell(70, 8, $attendance['Work_Hours'] ?? 'N/A', 1, 1);
+            }
         }
+        
+        // Leave Information (if available)
+        if (count($leave_data) > 0) {
+            $pdf->Ln(5);
+            $pdf->SetFont('Arial', 'B', 14);
+            $pdf->Cell(0, 10, 'LEAVE RECORDS', 1, 1, 'L', true);
+            
+            $pdf->SetFont('Arial', 'B', 11);
+            $pdf->Cell(40, 8, 'Leave Type', 1);
+            $pdf->Cell(40, 8, 'Start Date', 1);
+            $pdf->Cell(40, 8, 'End Date', 1);
+            $pdf->Cell(70, 8, 'Status', 1, 1);
+            
+            $pdf->SetFont('Arial', '', 11);
+            foreach ($leave_data as $leave) {
+                $pdf->Cell(40, 8, $leave['Leave_Type'], 1);
+                $pdf->Cell(40, 8, $leave['Start_Date'], 1);
+                $pdf->Cell(40, 8, $leave['End_Date'], 1);
+                $pdf->Cell(70, 8, $leave['Approval_Status'], 1, 1);
+            }
+        }
+        
+        // Payroll Information (if available)
+        if ($payroll_data) {
+            $pdf->Ln(5);
+            $pdf->SetFont('Arial', 'B', 14);
+            $pdf->Cell(0, 10, 'RECENT PAYROLL', 1, 1, 'L', true);
+            
+            $pdf->SetFont('Arial', '', 11);
+            $pdf->Cell(60, 8, 'Base Salary:', 1);
+            $pdf->Cell(130, 8, '$' . number_format($payroll_data['Base_Salary'], 2), 1, 1);
+            
+            $pdf->Cell(60, 8, 'Fixed Allowances:', 1);
+            $pdf->Cell(130, 8, '$' . number_format($payroll_data['Fixed_Allowances'], 2), 1, 1);
+            
+            $pdf->Cell(60, 8, 'Overtime Pay:', 1);
+            $pdf->Cell(130, 8, '$' . number_format($payroll_data['Overtime_Pay'], 2), 1, 1);
+            
+            $pdf->Cell(60, 8, 'Total Deductions:', 1);
+            $pdf->Cell(130, 8, '$' . number_format($payroll_data['Total_Deductions'], 2), 1, 1);
+            
+            $pdf->Cell(60, 8, 'Net Salary:', 1);
+            $pdf->Cell(130, 8, '$' . number_format($payroll_data['Net_Salary'], 2), 1, 1);
+            
+            $pdf->Cell(60, 8, 'Payment Date:', 1);
+            $pdf->Cell(130, 8, $payroll_data['Payment_Date'], 1, 1);
+        }
+        
+        // Footer
+        $pdf->SetY(-15);
+        $pdf->SetFont('Arial', 'I', 8);
+        $pdf->Cell(0, 10, 'Page ' . $pdf->PageNo() . ' - This is a confidential document.', 0, 0, 'C');
+        
+        // Output PDF
+        $filename = 'Employee_Details_' . $employee_data['Employee_ID'] . '.pdf';
+        $pdf->Output('D', $filename);
+        exit();
+    } catch (Exception $e) {
+        die("Error generating PDF: " . $e->getMessage());
     }
-    
-    // Payroll Information (if available)
-    if ($payroll_data) {
-        $pdf->Ln(5);
-        $pdf->SetFont('Arial', 'B', 14);
-        $pdf->Cell(0, 10, 'RECENT PAYROLL', 1, 1, 'L', true);
-        
-        $pdf->SetFont('Arial', '', 11);
-        $pdf->Cell(60, 8, 'Base Salary:', 1);
-        $pdf->Cell(130, 8, '$' . number_format($payroll_data['Base_Salary'], 2), 1, 1);
-        
-        $pdf->Cell(60, 8, 'Fixed Allowances:', 1);
-        $pdf->Cell(130, 8, '$' . number_format($payroll_data['Fixed_Allowances'], 2), 1, 1);
-        
-        $pdf->Cell(60, 8, 'Overtime Pay:', 1);
-        $pdf->Cell(130, 8, '$' . number_format($payroll_data['Overtime_Pay'], 2), 1, 1);
-        
-        $pdf->Cell(60, 8, 'Total Deductions:', 1);
-        $pdf->Cell(130, 8, '$' . number_format($payroll_data['Total_Deductions'], 2), 1, 1);
-        
-        $pdf->Cell(60, 8, 'Net Salary:', 1);
-        $pdf->Cell(130, 8, '$' . number_format($payroll_data['Net_Salary'], 2), 1, 1);
-        
-        $pdf->Cell(60, 8, 'Payment Date:', 1);
-        $pdf->Cell(130, 8, $payroll_data['Payment_Date'], 1, 1);
-    }
-    
-    // Footer
-    $pdf->SetY(-15);
-    $pdf->SetFont('Arial', 'I', 8);
-    $pdf->Cell(0, 10, 'Page ' . $pdf->PageNo() . ' - This is a confidential document.', 0, 0, 'C');
-    
-    // Output PDF
-    $pdf->Output('D', 'Employee_Details_' . $employee_data['Employee_ID'] . '.pdf');
-    exit();
 }
 
 // Normal page rendering
@@ -279,7 +290,7 @@ $conn = getDBConnection();
 $user_id = $_SESSION['user_id'];
 $sql_user = "SELECT First_Name, Last_Name FROM Employee WHERE Employee_ID = ?";
 $stmt_user = $conn->prepare($sql_user);
-$stmt_user->bind_param("s", $user_id); // Changed to string parameter
+$stmt_user->bind_param("s", $user_id);
 $stmt_user->execute();
 $user_result = $stmt_user->get_result();
 $user_data = $user_result->fetch_assoc();
@@ -449,6 +460,7 @@ $departments_result = $conn->query($sql_departments);
                         $employees_result = $stmt->get_result();
                         
                         if ($employees_result->num_rows > 0) {
+                            echo "<div class='department-section' id='dept-{$dept_id}'>";
                             echo "<div class='department-heading'>{$dept_name} Department</div>";
                             echo "<table class='table table-bordered table-striped mb-5'>";
                             echo "<thead><tr>
@@ -463,22 +475,23 @@ $departments_result = $conn->query($sql_departments);
                             
                             while ($employee = $employees_result->fetch_assoc()) {
                                 $emp_id = htmlspecialchars($employee['Employee_ID']);
-                                echo "<tr>";
-                                echo "<td>" . $emp_id . "</td>";
-                                echo "<td>" . htmlspecialchars($employee['First_Name'] . ' ' . $employee['Last_Name']) . "</td>";
-                                echo "<td>" . htmlspecialchars($employee['Position']) . "</td>";
+                                echo "<tr class='employee-row'>";
+                                echo "<td class='emp-id'>" . $emp_id . "</td>";
+                                echo "<td class='emp-name'>" . htmlspecialchars($employee['First_Name'] . ' ' . $employee['Last_Name']) . "</td>";
+                                echo "<td class='emp-position'>" . htmlspecialchars($employee['Position']) . "</td>";
                                 echo "<td>" . htmlspecialchars($employee['Email']) . "</td>";
                                 echo "<td>" . htmlspecialchars($employee['Contact_Number']) . "</td>";
                                 echo "<td>$" . number_format($employee['Salary'], 2) . "</td>";
                                 echo "<td class='action-buttons'>
-                                        <button onclick='generatePDF(\"" . $emp_id . "\")' class='btn btn-pdf btn-sm'>
+                                        <a href='#' onclick='generatePDF(\"" . $emp_id . "\"); return false;' class='btn btn-pdf btn-sm'>
                                             <i class='bi bi-file-earmark-pdf'></i> PDF
-                                        </button>
+                                        </a>
                                       </td>";
                                 echo "</tr>";
                             }
                             
                             echo "</tbody></table>";
+                            echo "</div>"; // End of department section
                         }
                         $stmt->close();
                     }
@@ -495,56 +508,79 @@ $departments_result = $conn->query($sql_departments);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function generatePDF(employeeId) {
+            // Show loading overlay
             document.getElementById('loadingOverlay').classList.add('show');
             
-            // Create a hidden iframe to download the PDF without leaving the page
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
+            // Create a form to submit for PDF generation
+            const form = document.createElement('form');
+            form.method = 'GET';
+            form.action = window.location.href;
             
-            iframe.src = `?generate_pdf=true&employee_id=${employeeId}`;
+            // Add parameters
+            const pdfParam = document.createElement('input');
+            pdfParam.type = 'hidden';
+            pdfParam.name = 'generate_pdf';
+            pdfParam.value = 'true';
+            form.appendChild(pdfParam);
             
-            // Hide loading overlay after download starts
-            iframe.onload = function() {
-                setTimeout(function() {
-                    document.getElementById('loadingOverlay').classList.remove('show');
-                    document.body.removeChild(iframe);
-                }, 1000);
-            };
+            const empParam = document.createElement('input');
+            empParam.type = 'hidden';
+            empParam.name = 'employee_id';
+            empParam.value = employeeId;
+            form.appendChild(empParam);
+            
+            // Append form to body and submit
+            document.body.appendChild(form);
+            
+            // Set timeout to prevent the form from being submitted if there's an error
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.remove('show');
+            }, 10000); // 10 second timeout as failsafe
+
+            // Submit the form
+            form.submit();
+
+            // Remove form from document
+            setTimeout(() => {
+                document.body.removeChild(form);
+            }, 1000);
         }
 
         function searchEmployee() {
             const input = document.getElementById('searchInput').value.toLowerCase();
-            const tables = document.querySelectorAll('.table tbody');
+            const rows = document.querySelectorAll('.employee-row');
+            const departmentSections = document.querySelectorAll('.department-section');
+            
             let anyResultsFound = false;
-
-            tables.forEach(tbody => {
-                const rows = tbody.querySelectorAll('tr');
-                let foundInTable = false;
+            
+            // Create a map to track visible rows by department
+            const visibleRowsByDepartment = {};
+            
+            // First pass: Check all rows and mark visible/hidden
+            rows.forEach(row => {
+                const employeeId = row.querySelector('.emp-id').textContent.toLowerCase();
+                const name = row.querySelector('.emp-name').textContent.toLowerCase();
+                const position = row.querySelector('.emp-position').textContent.toLowerCase();
+                const departmentSection = row.closest('.department-section');
+                const departmentId = departmentSection.id;
                 
-                rows.forEach(row => {
-                    const employeeId = row.cells[0].textContent.toLowerCase();
-                    const name = row.cells[1].textContent.toLowerCase();
-                    const position = row.cells[2].textContent.toLowerCase();
+                if (employeeId.includes(input) || name.includes(input) || position.includes(input)) {
+                    row.style.display = '';
+                    anyResultsFound = true;
                     
-                    if (employeeId.includes(input) || name.includes(input) || position.includes(input)) {
-                        row.style.display = '';
-                        foundInTable = true;
-                        anyResultsFound = true;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-                
-                const departmentHeading = tbody.closest('.table').previousElementSibling;
-                if (departmentHeading && departmentHeading.classList.contains('department-heading')) {
-                    departmentHeading.style.display = foundInTable ? '' : 'none';
+                    // Track that this department has visible rows
+                    visibleRowsByDepartment[departmentId] = true;
+                } else {
+                    row.style.display = 'none';
                 }
-                
-                const table = tbody.closest('.table');
-                table.style.display = foundInTable ? '' : 'none';
             });
-
+            
+            // Second pass: Show/hide department sections based on visible rows
+            departmentSections.forEach(section => {
+                const hasVisibleRows = visibleRowsByDepartment[section.id] || false;
+                section.style.display = hasVisibleRows ? '' : 'none';
+            });
+            
             if (!anyResultsFound && input !== '') {
                 alert('No employees found matching your search criteria.');
             }
@@ -552,19 +588,17 @@ $departments_result = $conn->query($sql_departments);
 
         function resetSearch() {
             document.getElementById('searchInput').value = '';
-            const tables = document.querySelectorAll('.table');
-            const headings = document.querySelectorAll('.department-heading');
             
-            tables.forEach(table => {
-                table.style.display = '';
-                const rows = table.querySelectorAll('tbody tr');
-                rows.forEach(row => {
-                    row.style.display = '';
-                });
+            // Show all rows
+            const rows = document.querySelectorAll('.employee-row');
+            rows.forEach(row => {
+                row.style.display = '';
             });
             
-            headings.forEach(heading => {
-                heading.style.display = '';
+            // Show all department sections
+            const departmentSections = document.querySelectorAll('.department-section');
+            departmentSections.forEach(section => {
+                section.style.display = '';
             });
         }
 
@@ -573,6 +607,11 @@ $departments_result = $conn->query($sql_departments);
                 e.preventDefault();
                 searchEmployee();
             }
+        });
+        
+        // Add event listener to search input for real-time filtering
+        document.getElementById('searchInput').addEventListener('input', function() {
+            searchEmployee();
         });
     </script>
 </body>
