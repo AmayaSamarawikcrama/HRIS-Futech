@@ -171,7 +171,7 @@ $conn->close();
 
             <div class="row mt-4 g-2">
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrEmployeeDetails.html'">Employee Details</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrEmployeeDetails.php'">Employee Details</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
                     <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrAddEmployee.php'">Add Employee</button>
@@ -180,25 +180,25 @@ $conn->close();
                     <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrProject.php'">Project</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Attendance.html'">Attendance</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Attendance.php'">Attendance</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
                     <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrLeave.php'">Leave State</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrSalary.html'">Salary Status</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrSalary.php'">Salary Status</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrProject.html'"> Our Projects</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrProject.php'"> Our Projects</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
                     <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Report.php'">Report</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Company.html'">Company</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Company.php'">Company</button>
                 </div>
                 <div class="col-12 col-sm-6 col-md-6 col-lg-3">
-                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrCalendar.html'">Calendar</button>
+                    <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='HrCalendar.php'">Calendar</button>
                 </div>
             </div>
         </div>

@@ -66,7 +66,7 @@ if (isset($_SESSION['user_id'])) {
                     <a href="Attendance.php" class="dropdown-item">My Attendance</a>
                     <a href="EmpProject.php" class="dropdown-item">Projects</a>
                     <a href="EmpSalary.php" class="dropdown-item">Salary Status</a>
-                    <a href="Report.php" class="dropdown-item">Report</a>
+                    <!-- <a href="Report.php" class="dropdown-item">Report</a> -->
                     <a href="Company.php" class="dropdown-item">Company Details</a>
                     <a href="EmpCalender.php" class="dropdown-item">Calendar</a>
                 </div>
@@ -101,9 +101,9 @@ if (isset($_SESSION['user_id'])) {
             <div class="col-12 col-sm-6 col-md-6 col-lg-3">
                 <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='EmpSalary.php'">Salary Status</button>
             </div>
-            <div class="col-12 col-sm-6 col-md-6 col-lg-3">
+            <!-- <div class="col-12 col-sm-6 col-md-6 col-lg-3">
                 <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Report.php'">Report</button>
-            </div>
+            </div> -->
             <div class="col-12 col-sm-6 col-md-6 col-lg-3">
                 <button class="btn btn-primary w-100 p-3 fs-6" onclick="location.href='Company.php'">Company Details</button>
             </div>
