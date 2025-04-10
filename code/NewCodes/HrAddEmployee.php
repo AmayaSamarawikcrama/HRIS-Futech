@@ -89,15 +89,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     try {
         // Prepare and execute the SQL statement for employee
-        $query = "INSERT INTO Employee (Employee_ID, Password, Employee_Type, First_Name, Last_Name, 
-                    Date_of_Birth, Gender, Address, Contact_Number, Email, Qualification, Insurance, Blood_Type, 
-                    Marital_Status, Hire_Date, Salary, Department_ID, Manager_ID, file_name)
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO Employee (
+    Employee_ID, Password, Employee_Type, First_Name, Last_Name, 
+    Date_of_Birth, Gender, Address, Contact_Number, Email, 
+    Qualification, Insurance, Blood_Type, Marital_Status, Hire_Date, 
+    Salary, Department_ID, Manager_ID, file_name)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+";
         
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("ssssssssssssssdis", $employee_id, $password, $employee_type, $first_name, $last_name,
-                         $dob, $gender, $address, $contact_no, $email, $qualification, $insurance, $blood_type,
-                         $marital_status, $hire_date, $salary, $department_id, $manager_id, $file_name);
+        $stmt->bind_param("ssssssssssssssdisss", $employee_id, $password, $employee_type, $first_name, $last_name,
+                 $dob, $gender, $address, $contact_no, $email, $qualification, $insurance, $blood_type,
+                 $marital_status, $hire_date, $salary, $department_id, $manager_id, $file_name);
+
         
         if ($stmt->execute()) {
             // Get the employee ID that was just created
