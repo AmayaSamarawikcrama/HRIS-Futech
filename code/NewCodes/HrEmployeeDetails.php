@@ -1,59 +1,56 @@
 <?php
-// Start session
 session_start();
 
-// Database Connection - Using default XAMPP credentials
-$servername = "localhost";
-$username = "root";       // Default XAMPP username
-$password = "";           // Default XAMPP password (empty)
-$dbname = "hris_db";      // Your database name
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Check if user is logged in
-if (!isset($_SESSION['Employee_ID'])) {
-    // Redirect to login page if not logged in
+if(!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
 
-// Get user data for header display
-$employee_id = $_SESSION['Employee_ID'];
-$sql = "SELECT First_Name, Last_Name FROM Employee WHERE Employee_ID = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $employee_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    $user_data = $result->fetch_assoc();
-} else {
-    // Handle case where employee data isn't found
-    $user_data = ['First_Name' => 'Guest', 'Last_Name' => ''];
+function getDBConnection() {
+    $conn = new mysqli('localhost', 'root', '', 'hris_db');
+    if ($conn->connect_error) {
+        die("Connection failed: " . $conn->connect_error);
+    }
+    return $conn;
 }
-$stmt->close();
 
-// Get all departments
-$sql_departments = "SELECT Department_ID, Department_Name FROM Department ORDER BY Department_Name";
-$departments_result = $conn->query($sql_departments);
+// Generate CSRF token if not exists
+if(empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
-// Function to logout
-function logout() {
-    session_unset();
+// Handle logout
+if(isset($_GET['logout'])) {
     session_destroy();
     header("Location: login.php");
     exit();
 }
 
-// Handle logout if requested
-if (isset($_GET['logout'])) {
-    logout();
+$conn = getDBConnection();
+
+// Get current user data
+$user_id = $_SESSION['user_id'];
+$sql_user = "SELECT First_Name, Last_Name FROM Employee WHERE Employee_ID = ?";
+$stmt_user = $conn->prepare($sql_user);
+$stmt_user->bind_param("i", $user_id);
+$stmt_user->execute();
+$user_result = $stmt_user->get_result();
+$user_data = $user_result->fetch_assoc();
+$stmt_user->close();
+
+// Get all departments
+$sql_departments = "SELECT Department_ID, Department_Name FROM Department ORDER BY Department_Name";
+$departments_result = $conn->query($sql_departments);
+
+// Handle POST requests (if any form submissions)
+if($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit'])) {
+    if(!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $_SESSION['message'] = "Security verification failed. Please try again.";
+        $_SESSION['message_type'] = "error";
+        header("Location: HrEmployeeDetails.php");
+        exit();
+    }
+    // Handle any form submissions here
 }
 ?>
 
@@ -91,6 +88,11 @@ if (isset($_GET['logout'])) {
             padding: 10px;
             border-radius: 5px;
             margin-top: 20px;
+        }
+        
+        .employee-name {
+            font-weight: bold;
+            color: #dc3545;
         }
     </style>
 </head>
@@ -139,13 +141,11 @@ if (isset($_GET['logout'])) {
 
             <div class="table-responsive">
                 <?php
-                // Loop through each department
-                if ($departments_result && $departments_result->num_rows > 0) {
+                if ($departments_result->num_rows > 0) {
                     while ($department = $departments_result->fetch_assoc()) {
                         $dept_id = $department['Department_ID'];
-                        $dept_name = $department['Department_Name'];
+                        $dept_name = htmlspecialchars($department['Department_Name']);
                         
-                        // Query to get employees in current department
                         $sql_employees = "SELECT e.Employee_ID, e.First_Name, e.Last_Name, 
                                          e.Employee_Type as Position, e.Email, e.Contact_Number, e.Salary
                                       FROM Employee e
@@ -157,22 +157,18 @@ if (isset($_GET['logout'])) {
                         $stmt->execute();
                         $employees_result = $stmt->get_result();
                         
-                        // Only show department if it has employees
-                        if ($employees_result && $employees_result->num_rows > 0) {
+                        if ($employees_result->num_rows > 0) {
                             echo "<div class='department-heading'>{$dept_name} Department</div>";
                             echo "<table class='table table-bordered table-striped mb-5'>";
-                            echo "<thead>
-                                    <tr>
-                                        <th>Employee ID</th>
-                                        <th>Full Name</th>
-                                        <th>Position</th>
-                                        <th>Email</th>
-                                        <th>Contact Number</th>
-                                        <th>Salary</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>";
-                            echo "<tbody>";
+                            echo "<thead><tr>
+                                    <th>Employee ID</th>
+                                    <th>Full Name</th>
+                                    <th>Position</th>
+                                    <th>Email</th>
+                                    <th>Contact Number</th>
+                                    <th>Salary</th>
+                                    <th>Action</th>
+                                </tr></thead><tbody>";
                             
                             while ($employee = $employees_result->fetch_assoc()) {
                                 echo "<tr>";
@@ -181,7 +177,6 @@ if (isset($_GET['logout'])) {
                                 echo "<td>" . htmlspecialchars($employee['Position']) . "</td>";
                                 echo "<td>" . htmlspecialchars($employee['Email']) . "</td>";
                                 echo "<td>" . htmlspecialchars($employee['Contact_Number']) . "</td>";
-                                // Format salary with two decimal places
                                 echo "<td>$" . number_format($employee['Salary'], 2) . "</td>";
                                 echo "<td>
                                         <a href='viewEmployeeDetails.php?id=" . $employee['Employee_ID'] . "' class='btn btn-primary btn-sm'>View</a>
@@ -190,17 +185,14 @@ if (isset($_GET['logout'])) {
                                 echo "</tr>";
                             }
                             
-                            echo "</tbody>";
-                            echo "</table>";
+                            echo "</tbody></table>";
                         }
-                        
                         $stmt->close();
                     }
                 } else {
                     echo "<div class='alert alert-info'>No departments found.</div>";
                 }
                 
-                // Close the database connection
                 $conn->close();
                 ?>
             </div>
@@ -232,13 +224,11 @@ if (isset($_GET['logout'])) {
                     }
                 });
                 
-                // Show/hide department headings based on search results
                 const departmentHeading = tbody.closest('.table').previousElementSibling;
                 if (departmentHeading && departmentHeading.classList.contains('department-heading')) {
                     departmentHeading.style.display = foundInTable ? '' : 'none';
                 }
                 
-                // Show/hide tables based on search results
                 const table = tbody.closest('.table');
                 table.style.display = foundInTable ? '' : 'none';
             });
@@ -266,7 +256,6 @@ if (isset($_GET['logout'])) {
             });
         }
 
-        // Allow search on Enter key press
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
