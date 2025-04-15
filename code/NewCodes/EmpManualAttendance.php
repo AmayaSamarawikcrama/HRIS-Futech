@@ -38,19 +38,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit'])) {
     $date = filter_input(INPUT_POST, 'date', FILTER_SANITIZE_STRING);
     $clock_in = filter_input(INPUT_POST, 'clock_in', FILTER_SANITIZE_STRING);
     $clock_out = filter_input(INPUT_POST, 'clock_out', FILTER_SANITIZE_STRING);
-    $work_hours = filter_input(INPUT_POST, 'work_hours', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
     $assigned_task = filter_input(INPUT_POST, 'assigned_task', FILTER_SANITIZE_STRING);
     $task_completion = filter_input(INPUT_POST, 'task_completion', FILTER_SANITIZE_NUMBER_INT);
     $comments = filter_input(INPUT_POST, 'comments', FILTER_SANITIZE_STRING);
+    
+    // Set defaults for nullable fields
+    if (empty($assigned_task)) $assigned_task = NULL;
+    if (empty($task_completion)) $task_completion = NULL;
+    if (empty($comments)) $comments = NULL;
     
     // Validate inputs
     $errors = [];
     if (empty($date)) $errors[] = "Date is required";
     if (empty($clock_in)) $errors[] = "Clock in time is required";
     if (empty($clock_out)) $errors[] = "Clock out time is required";
-    if (empty($work_hours)) $errors[] = "Work hours are required";
-    if (empty($assigned_task)) $errors[] = "Assigned task is required";
-    if ($task_completion < 0 || $task_completion > 100) $errors[] = "Task completion must be 0-100%";
     
     if (empty($errors)) {
         // Check for existing attendance
@@ -62,18 +63,72 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit'])) {
             $_SESSION['message'] = "Attendance already recorded for this date.";
             $_SESSION['message_type'] = "error";
         } else {
-            // Insert new record
-            $insert_stmt = $conn->prepare("INSERT INTO Attendance (Employee_ID, Date, Log_In_Time, Log_Out_Time, Work_Hours, Assigned_Task, Task_Completion, Comments) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $insert_stmt->bind_param("ssssdsds", $employee_id, $date, $clock_in, $clock_out, $work_hours, $assigned_task, $task_completion, $comments);
+            // Prepare SQL with only the fields that exist
+            $sql = "INSERT INTO Attendance (Employee_ID, Date, Log_In_Time, Log_Out_Time";
+            $types = "ssss"; // Start with the basic parameter types
+            $params = array($employee_id, $date, $clock_in, $clock_out);
             
-            if ($insert_stmt->execute()) {
-                $_SESSION['message'] = "Attendance recorded successfully!";
-                $_SESSION['message_type'] = "success";
-            } else {
-                $_SESSION['message'] = "Error: " . $conn->error;
-                $_SESSION['message_type'] = "error";
+            // Add optional fields if they exist in the database
+            try {
+                $check_columns = $conn->query("SHOW COLUMNS FROM Attendance LIKE 'Assigned_Task'");
+                if ($check_columns->num_rows > 0) {
+                    $sql .= ", Assigned_Task";
+                    $types .= "s";
+                    $params[] = $assigned_task;
+                }
+                
+                $check_columns = $conn->query("SHOW COLUMNS FROM Attendance LIKE 'Task_Completion'");
+                if ($check_columns->num_rows > 0) {
+                    $sql .= ", Task_Completion";
+                    $types .= "d";
+                    $params[] = $task_completion;
+                }
+                
+                $check_columns = $conn->query("SHOW COLUMNS FROM Attendance LIKE 'Comments'");
+                if ($check_columns->num_rows > 0) {
+                    $sql .= ", Comments";
+                    $types .= "s";
+                    $params[] = $comments;
+                }
+                
+                // Complete the SQL statement
+                $sql .= ") VALUES (";
+                $placeholders = array_fill(0, count($params), "?");
+                $sql .= implode(", ", $placeholders) . ")";
+                
+                // Prepare and execute the statement
+                $insert_stmt = $conn->prepare($sql);
+                
+                // Create the bind_param arguments dynamically
+                $bindParams = array();
+                $bindParams[] = &$types;
+                for ($i = 0; $i < count($params); $i++) {
+                    $bindParams[] = &$params[$i];
+                }
+                call_user_func_array(array($insert_stmt, 'bind_param'), $bindParams);
+                
+                if ($insert_stmt->execute()) {
+                    $_SESSION['message'] = "Attendance recorded successfully!";
+                    $_SESSION['message_type'] = "success";
+                } else {
+                    $_SESSION['message'] = "Error: " . $conn->error;
+                    $_SESSION['message_type'] = "error";
+                }
+                $insert_stmt->close();
+            } catch (Exception $e) {
+                // Fallback to basic insert if column check fails
+                $basic_insert = $conn->prepare("INSERT INTO Attendance (Employee_ID, Date, Log_In_Time, Log_Out_Time) VALUES (?, ?, ?, ?)");
+                $basic_insert->bind_param("ssss", $employee_id, $date, $clock_in, $clock_out);
+                
+                if ($basic_insert->execute()) {
+                    $_SESSION['message'] = "Attendance recorded successfully (basic record)!";
+                    $_SESSION['message_type'] = "success";
+                } else {
+                    $_SESSION['message'] = "Error: " . $conn->error;
+                    $_SESSION['message_type'] = "error";
+                }
+                $basic_insert->close();
             }
-            $insert_stmt->close();
         }
         $check_stmt->close();
     } else {
@@ -151,7 +206,11 @@ $conn->close();
             </div>
 
             <span class="employee-name ms-auto me-3">
-                <?php echo htmlspecialchars($_SESSION['user_data']['First_Name'] . ' ' . $_SESSION['user_data']['Last_Name']); ?>
+                <?php if(isset($_SESSION['user_data'])): ?>
+                    <?php echo htmlspecialchars($_SESSION['user_data']['First_Name'] . ' ' . $_SESSION['user_data']['Last_Name']); ?>
+                <?php else: ?>
+                    User
+                <?php endif; ?>
             </span>
             <button class="btn btn-primary me-2" onclick="window.location.href='logout.php'">Log Out</button>
             <img src="assets/image.png" alt="Profile Icon" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;">
@@ -195,23 +254,19 @@ $conn->close();
 
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <label class="form-label">Work Hours</label>
-                    <input type="number" step="0.01" name="work_hours" id="work_hours" class="form-control" required>
+                    <label class="form-label">Assigned Task</label>
+                    <input type="text" name="assigned_task" class="form-control">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Assigned Task</label>
-                    <input type="text" name="assigned_task" class="form-control" required>
+                    <label class="form-label">Task Completion (%)</label>
+                    <input type="number" name="task_completion" min="0" max="100" class="form-control" value="0">
                 </div>
             </div>
 
             <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label">Task Completion (%)</label>
-                    <input type="number" name="task_completion" min="0" max="100" class="form-control" required>
-                </div>
-                <div class="col-md-6">
+                <div class="col-12">
                     <label class="form-label">Comments</label>
-                    <textarea name="comments" class="form-control" rows="1"></textarea>
+                    <textarea name="comments" class="form-control" rows="2"></textarea>
                 </div>
             </div>
 
@@ -231,9 +286,17 @@ $conn->close();
                             <th>Clock In</th>
                             <th>Clock Out</th>
                             <th>Work Hours</th>
-                            <th>Task</th>
-                            <th>Completion %</th>
-                            <th>Comments</th>
+                            <?php
+                            // Check if the new columns exist
+                            $conn = getDBConnection();
+                            $check_task = $conn->query("SHOW COLUMNS FROM Attendance LIKE 'Assigned_Task'");
+                            $check_completion = $conn->query("SHOW COLUMNS FROM Attendance LIKE 'Task_Completion'");
+                            $check_comments = $conn->query("SHOW COLUMNS FROM Attendance LIKE 'Comments'");
+                            if ($check_task->num_rows > 0) echo "<th>Task</th>";
+                            if ($check_completion->num_rows > 0) echo "<th>Completion %</th>";
+                            if ($check_comments->num_rows > 0) echo "<th>Comments</th>";
+                            $conn->close();
+                            ?>
                         </tr>
                     </thead>
                     <tbody>
@@ -244,9 +307,15 @@ $conn->close();
                                     <td><?php echo htmlspecialchars($record['Log_In_Time']); ?></td>
                                     <td><?php echo htmlspecialchars($record['Log_Out_Time']); ?></td>
                                     <td><?php echo htmlspecialchars($record['Work_Hours']); ?></td>
-                                    <td><?php echo htmlspecialchars($record['Assigned_Task']); ?></td>
-                                    <td><?php echo htmlspecialchars($record['Task_Completion']); ?>%</td>
-                                    <td><?php echo htmlspecialchars($record['Comments']); ?></td>
+                                    <?php if (isset($record['Assigned_Task'])): ?>
+                                        <td><?php echo htmlspecialchars($record['Assigned_Task'] ?: 'N/A'); ?></td>
+                                    <?php endif; ?>
+                                    <?php if (isset($record['Task_Completion'])): ?>
+                                        <td><?php echo htmlspecialchars($record['Task_Completion'] ?: '0') . '%'; ?></td>
+                                    <?php endif; ?>
+                                    <?php if (isset($record['Comments'])): ?>
+                                        <td><?php echo htmlspecialchars($record['Comments'] ?: ''); ?></td>
+                                    <?php endif; ?>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
@@ -268,7 +337,7 @@ $conn->close();
         menu.classList.toggle('d-none');
     }
 
-    // Calculate work hours automatically
+    // Calculate work hours automatically (client-side only, actual calculation happens in DB)
     document.getElementById('clock_in').addEventListener('change', calculateHours);
     document.getElementById('clock_out').addEventListener('change', calculateHours);
 
@@ -283,7 +352,7 @@ $conn->close();
             let totalMinutes = (outH * 60 + outM) - (inH * 60 + inM);
             if (totalMinutes < 0) totalMinutes += 24 * 60; // Handle overnight
             
-            document.getElementById('work_hours').value = (totalMinutes / 60).toFixed(2);
+            console.log("Estimated work hours: " + (totalMinutes / 60).toFixed(2));
         }
     }
 </script>
