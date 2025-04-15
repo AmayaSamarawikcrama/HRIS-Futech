@@ -275,7 +275,7 @@ $conn->close();
             </div>
         </form>
 
-        <!-- Attendance Records Table -->
+       
         <div class="attendance-table">
             <h3 class="text-center mb-3">My Attendance Records</h3>
             <div class="table-responsive">
