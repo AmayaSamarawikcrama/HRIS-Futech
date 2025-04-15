@@ -287,7 +287,6 @@ $conn->close();
                             <th>Clock Out</th>
                             <th>Work Hours</th>
                             <?php
-                            // Check if the new columns exist
                             $conn = getDBConnection();
                             $check_task = $conn->query("SHOW COLUMNS FROM Attendance LIKE 'Assigned_Task'");
                             $check_completion = $conn->query("SHOW COLUMNS FROM Attendance LIKE 'Task_Completion'");
