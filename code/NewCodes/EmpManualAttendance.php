@@ -337,7 +337,6 @@ $conn->close();
         menu.classList.toggle('d-none');
     }
 
-    // Calculate work hours automatically (client-side only, actual calculation happens in DB)
     document.getElementById('clock_in').addEventListener('change', calculateHours);
     document.getElementById('clock_out').addEventListener('change', calculateHours);
 
