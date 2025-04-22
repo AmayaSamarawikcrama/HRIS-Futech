@@ -24,7 +24,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->execute();
         $employee = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        if ($employee && $password === $employee['Password']) {
+        // Password verification (using password_verify which supports bcrypt, argon2i, etc.)
+        if ($employee && password_verify($password, $employee['Password'])) {
+            // Password is correct
             session_regenerate_id(true);
             $_SESSION['user_id'] = $employee['Employee_ID'];
             $_SESSION['user_type'] = $employee['Employee_Type'];
