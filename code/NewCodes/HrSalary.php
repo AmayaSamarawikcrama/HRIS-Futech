@@ -53,7 +53,8 @@ if (isset($_GET['employee_id']) && !empty($_GET['employee_id'])) {
     $current_month = date('Y-m');
     $attendance_query = "SELECT 
         COUNT(DISTINCT Date) as worked_days,
-        SUM(Work_Hours) as total_hours
+        SUM(Work_Hours) as total_hours,
+        AVG(Task_Completion) as avg_task_completion
         FROM Attendance 
         WHERE Employee_ID = ? 
         AND DATE_FORMAT(Date, '%Y-%m') = ?";
@@ -63,6 +64,16 @@ if (isset($_GET['employee_id']) && !empty($_GET['employee_id'])) {
     $attendance_result = $attendance_stmt->get_result();
     $attendance_data = $attendance_result->fetch_assoc();
 
+    // Get overtime hours
+    $standard_hours_per_day = 8;
+    $total_standard_hours = $attendance_data['worked_days'] * $standard_hours_per_day;
+    $overtime_hours = ($attendance_data['total_hours'] ?? 0) - $total_standard_hours;
+    $overtime_hours = max(0, $overtime_hours); // Ensure it's not negative
+    
+    // Calculate overtime pay (1.5x hourly rate)
+    $hourly_rate = $employee['Salary'] / (22 * $standard_hours_per_day); // Assuming 22 working days per month
+    $overtime_pay = $overtime_hours * $hourly_rate * 1.5;
+
     // Get leave data for current month
     $leave_query = "SELECT 
         COUNT(*) as leave_days,
@@ -71,19 +82,28 @@ if (isset($_GET['employee_id']) && !empty($_GET['employee_id'])) {
         WHERE Employee_ID = ? 
         AND Approval_Status = 'Approved'
         AND (
-            DATE_FORMAT(Start_Date, '%Y-%m') = ? OR 
-            DATE_FORMAT(End_Date, '%Y-%m') = ?
+            (Start_Date BETWEEN ? AND LAST_DAY(?)) OR 
+            (End_Date BETWEEN ? AND LAST_DAY(?)) OR
+            (Start_Date <= ? AND End_Date >= LAST_DAY(?))
         )";
+    $first_day_of_month = date('Y-m-01');
     $leave_stmt = $conn->prepare($leave_query);
-    $leave_stmt->bind_param("sss", $employee_id, $current_month, $current_month);
+    $leave_stmt->bind_param("sssssss", $employee_id, $first_day_of_month, $first_day_of_month, 
+                           $first_day_of_month, $first_day_of_month, $first_day_of_month, $first_day_of_month);
     $leave_stmt->execute();
     $leave_result = $leave_stmt->get_result();
     $leave_data = $leave_result->fetch_assoc();
 
     // Calculate unpaid leave deduction
     $working_days_in_month = date('t'); // Total days in current month
-    $daily_rate = $employee['Salary'] / $working_days_in_month;
-    $unpaid_leave_deduction = $leave_data['unpaid_leave_days'] * $daily_rate;
+    $daily_rate = $employee['Salary'] / 22; // Assuming 22 working days per month
+    $unpaid_leave_deduction = ($leave_data['unpaid_leave_days'] ?? 0) * $daily_rate;
+
+    // Calculate performance-based bonus (example logic)
+    $performance_bonus = 0;
+    if (($attendance_data['avg_task_completion'] ?? 0) > 90) {
+        $performance_bonus = $employee['Salary'] * 0.05; // 5% bonus for high performers
+    }
 
     // Prepare response data
     $response = [
@@ -97,8 +117,10 @@ if (isset($_GET['employee_id']) && !empty($_GET['employee_id'])) {
         'leave_days' => $leave_data['leave_days'] ?? 0,
         'unpaid_leave_days' => $leave_data['unpaid_leave_days'] ?? 0,
         'unpaid_leave_deduction' => round($unpaid_leave_deduction, 2),
-        'overtime_hours' => 0, // Calculate if needed
-        'overtime_pay' => 0 // Calculate if needed
+        'overtime_hours' => round($overtime_hours, 2),
+        'overtime_pay' => round($overtime_pay, 2),
+        'performance_bonus' => round($performance_bonus, 2),
+        'task_completion' => round($attendance_data['avg_task_completion'] ?? 0, 2)
     ];
 
     // Send response
@@ -132,6 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $paye_tax = !empty($_POST['paye_tax']) ? floatval($_POST['paye_tax']) : 0;
     $payment_method = $_POST['payment_method'];
     $payment_date = $_POST['payment_date'];
+    $performance_bonus = !empty($_POST['performance_bonus']) ? floatval($_POST['performance_bonus']) : 0;
     
     // Validate employee exists
     $check_employee = $conn->prepare("SELECT Employee_ID FROM Employee WHERE Employee_ID = ?");
@@ -237,6 +260,26 @@ $payroll_records_query = "SELECT
     JOIN Employee e ON p.Employee_ID = e.Employee_ID
     ORDER BY p.Payment_Date DESC, e.First_Name";
 $payroll_records = $conn->query($payroll_records_query);
+
+// Get employee statistics
+$employee_stats_query = "SELECT 
+    COUNT(*) as total_employees,
+    AVG(Salary) as avg_salary,
+    SUM(Salary) as total_salary_expense
+    FROM Employee";
+$employee_stats = $conn->query($employee_stats_query)->fetch_assoc();
+
+// Get department payroll statistics
+$dept_stats_query = "SELECT 
+    d.Department_Name,
+    COUNT(e.Employee_ID) as employee_count,
+    AVG(e.Salary) as avg_salary,
+    SUM(e.Salary) as total_salary
+    FROM Department d
+    JOIN Employee e ON d.Department_ID = e.Department_ID
+    GROUP BY d.Department_ID
+    ORDER BY total_salary DESC";
+$dept_stats = $conn->query($dept_stats_query);
 ?>
 
 <!DOCTYPE html>
@@ -246,10 +289,11 @@ $payroll_records = $conn->query($payroll_records_query);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payroll Management</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .employee-name {
             font-weight: bold;
-            color: red;
+            color: #dc3545;
         }
         .menu-icon {
             cursor: pointer;
@@ -273,7 +317,12 @@ $payroll_records = $conn->query($payroll_records_query);
         }
         .payroll-card {
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        .payroll-card:hover {
+            transform: translateY(-5px);
         }
         .payroll-summary {
             background-color: #f8f9fa;
@@ -285,12 +334,116 @@ $payroll_records = $conn->query($payroll_records_query);
             display: flex;
             justify-content: space-between;
             margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .summary-total {
+            font-weight: bold;
+            border-top: 2px solid #dee2e6;
+            padding-top: 10px;
         }
         .salary-calculator {
             background-color: #f0f8ff;
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+        }
+        .stats-card {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        .stats-card:hover {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+        .stats-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .stats-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .stats-label {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .form-section {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-section-title {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #495057;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .table th {
+            background-color: #0d6efd;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        .badge-success {
+            background-color: #28a745;
+            color: white;
+            padding: 5px 8px;
+            border-radius: 5px;
+        }
+        .badge-warning {
+            background-color: #ffc107;
+            color: #212529;
+            padding: 5px 8px;
+            border-radius: 5px;
+        }
+        .badge-primary {
+            background-color: #0d6efd;
+            color: white;
+            padding: 5px 8px;
+            border-radius: 5px;
+        }
+        .input-group-text {
+            background-color: #e9ecef;
+        }
+        .employee-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .info-value {
+            color: #0d6efd;
         }
     </style>
 </head>
@@ -298,24 +451,25 @@ $payroll_records = $conn->query($payroll_records_query);
     <div class="container-fluid">
         <nav class="navbar navbar-expand-lg navbar-light bg-light p-3">
             <div class="container-fluid">
-                <span class="menu-icon" onclick="toggleMenu()">&#9776;</span>
+                <span class="menu-icon" onclick="toggleMenu()"><i class="fas fa-bars"></i></span>
                 <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2 navigation" style="top: 50px; left: 10px; z-index: 1000;">
-                    <a href="HrDashboard.php" class="d-block text-decoration-none text-dark mb-2">Dashboard</a>
-                    <a href="HrAddEmployee.php" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
-                    <a href="HrEmployeeDetails.php" class="d-block text-decoration-none text-dark mb-2">Employee Details</a>
-                    <a href="Attendance.php" class="d-block text-decoration-none text-dark mb-2">Attendance</a>
-                    <a href="HrProject.php" class="d-block text-decoration-none text-dark mb-2">Project</a>
-                    <a href="HrLeave.php" class="d-block text-decoration-none text-dark mb-2">Leave</a>
-                    <a href="HrSalary.php" class="d-block text-decoration-none text-dark mb-2">Salary</a>
-                    <a href="Report.php" class="d-block text-decoration-none text-dark mb-2">Report</a>
-                    <a href="Company.php" class="d-block text-decoration-none text-dark mb-2">Company Details</a>
-                    <a href="HrCalendar.php" class="d-block text-decoration-none text-dark mb-2">Calendar</a>
+                    <a href="HrDashboard.php" class="d-block text-decoration-none text-dark mb-2"><i class="fas fa-home me-2"></i>Dashboard</a>
+                    <a href="HrAddEmployee.php" class="d-block text-decoration-none text-dark mb-2"><i class="fas fa-user-plus me-2"></i>Add Employee</a>
+                    <a href="HrEmployeeDetails.php" class="d-block text-decoration-none text-dark mb-2"><i class="fas fa-users me-2"></i>Employee Details</a>
+                    <a href="Attendance.php" class="d-block text-decoration-none text-dark mb-2"><i class="fas fa-clock me-2"></i>Attendance</a>
+                    <a href="HrProject.php" class="d-block text-decoration-none text-dark mb-2"><i class="fas fa-project-diagram me-2"></i>Project</a>
+                    <a href="HrLeave.php" class="d-block text-decoration-none text-dark mb-2"><i class="fas fa-calendar-minus me-2"></i>Leave</a>
+                    <a href="HrSalary.php" class="d-block text-decoration-none text-dark mb-2"><i class="fas fa-money-bill-wave me-2"></i>Salary</a>
+                    <a href="Report.php" class="d-block text-decoration-none text-dark mb-2"><i class="fas fa-chart-bar me-2"></i>Report</a>
+                    <a href="Company.php" class="d-block text-decoration-none text-dark mb-2"><i class="fas fa-building me-2"></i>Company Details</a>
+                    <a href="HrCalendar.php" class="d-block text-decoration-none text-dark mb-2"><i class="fas fa-calendar-alt me-2"></i>Calendar</a>
                 </div>
                 <span class="employee-name ms-auto me-3">
+                    <i class="fas fa-user-circle me-1"></i>
                     <?php echo htmlspecialchars($user_data['First_Name'] . ' ' . $user_data['Last_Name']); ?>
                 </span>
                 
-                <button class="btn btn-primary me-2" onclick="logout()">Log Out</button>
+                <button class="btn btn-primary me-2" onclick="logout()"><i class="fas fa-sign-out-alt me-1"></i>Log Out</button>
                 <img src="assets/image.png" alt="Profile Icon" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" onclick="location.href='assets/image.png'">
             </div>
         </nav>
@@ -324,6 +478,7 @@ $payroll_records = $conn->query($payroll_records_query);
         <?php if (!empty($message)): ?>
             <div class="container mt-3">
                 <div class="alert alert-<?php echo $messageType; ?> alert-dismissible fade show" role="alert">
+                    <i class="fas <?php echo ($messageType == 'success') ? 'fa-check-circle' : 'fa-exclamation-circle'; ?> me-2"></i>
                     <?php echo $message; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -332,228 +487,495 @@ $payroll_records = $conn->query($payroll_records_query);
         
         <div class="container mt-4">
             <div class="row">
-                <div class="col-12">
-                    <div class="card payroll-card">
-                        <div class="card-header bg-primary text-white">
-                            <h2 class="text-center mb-0">Payroll Management</h2>
-                        </div>
-                        <div class="card-body">
-                            <!-- Payroll Entry Form -->
-                            <form class="row g-3" method="POST" id="payrollForm">
-                                <div class="col-md-6">
-                                    <label for="employee_id" class="form-label">Employee:</label>
-                                    <select class="form-select" name="employee_id" id="employee_id" required onchange="fetchEmployeeDetails()">
-                                        <option value="">Select Employee</option>
-                                        <?php while ($employee = $employees_result->fetch_assoc()): ?>
-                                            <option value="<?php echo htmlspecialchars($employee['Employee_ID']); ?>">
-                                                <?php echo htmlspecialchars($employee['Employee_ID'] . ' - ' . $employee['FullName']); ?>
-                                            </option>
-                                        <?php endwhile; ?>
-                                    </select>
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label for="payment_date" class="form-label">Payment Date:</label>
-                                    <input type="date" class="form-control" name="payment_date" value="<?php echo $current_month; ?>" required>
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label for="base_salary" class="form-label">Base Salary (LKR):</label>
-                                    <input type="number" class="form-control" step="0.01" name="base_salary" id="base_salary" required onchange="calculateSalary()">
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label for="fixed_allowances" class="form-label">Fixed Allowances (LKR):</label>
-                                    <input type="number" class="form-control" step="0.01" name="fixed_allowances" id="fixed_allowances" value="0" onchange="calculateSalary()">
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label for="overtime_pay" class="form-label">Overtime Pay (LKR):</label>
-                                    <input type="number" class="form-control" step="0.01" name="overtime_pay" id="overtime_pay" value="0" onchange="calculateSalary()">
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label for="unpaid_leave_deductions" class="form-label">Unpaid Leave Deductions (LKR):</label>
-                                    <input type="number" class="form-control" step="0.01" name="unpaid_leave_deductions" id="unpaid_leave_deductions" value="0" onchange="calculateSalary()">
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label for="loan_recovery" class="form-label">Loan Recovery (LKR):</label>
-                                    <input type="number" class="form-control" step="0.01" name="loan_recovery" id="loan_recovery" value="0" onchange="calculateSalary()">
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label for="paye_tax" class="form-label">PAYE Tax (LKR):</label>
-                                    <input type="number" class="form-control" step="0.01" name="paye_tax" id="paye_tax" value="0" onchange="calculateSalary()">
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <label for="payment_method" class="form-label">Payment Method:</label>
-                                    <select class="form-select" name="payment_method" required>
-                                        <option value="Bank Transfer">Bank Transfer</option>
-                                        <option value="Cheque">Cheque</option>
-                                        <option value="Cash">Cash</option>
-                                    </select>
-                                </div>
-                                
-                                <!-- Salary Calculator Preview -->
-                                <div class="col-md-6">
-                                    <div class="salary-calculator">
-                                        <h5>Salary Calculation Preview</h5>
-                                        <div class="summary-item">
-                                            <span>Employee EPF (8%):</span>
-                                            <span id="employee_epf_preview">0.00</span>
-                                        </div>
-                                        <div class="summary-item">
-                                            <span>Employer EPF (12%):</span>
-                                            <span id="employer_epf_preview">0.00</span>
-                                        </div>
-                                        <div class="summary-item">
-                                            <span>Employer ETF (3%):</span>
-                                            <span id="employer_etf_preview">0.00</span>
-                                        </div>
-                                        <div class="summary-item">
-                                            <span>Gross Salary:</span>
-                                            <span id="gross_salary_preview">0.00</span>
-                                        </div>
-                                        <div class="summary-item">
-                                            <span>Total Deductions:</span>
-                                            <span id="total_deductions_preview">0.00</span>
-                                        </div>
-                                        <div class="summary-item">
-                                            <strong>Net Salary:</strong>
-                                            <strong id="net_salary_preview">0.00</strong>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-12">
-                                    <div class="d-flex justify-content-center">
-                                        <button type="submit" class="btn btn-primary">Submit Payroll</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
+                <!-- Statistics Cards -->
+                <div class="col-md-4">
+                    <div class="stats-card text-center">
+                        <i class="fas fa-users fa-2x mb-3 text-primary"></i>
+                        <div class="stats-value"><?php echo number_format($employee_stats['total_employees']); ?></div>
+                        <div class="stats-label">Total Employees</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card text-center">
+                        <i class="fas fa-money-bill-wave fa-2x mb-3 text-success"></i>
+                        <div class="stats-value">LKR <?php echo number_format($employee_stats['avg_salary'], 2); ?></div>
+                        <div class="stats-label">Average Salary</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card text-center">
+                        <i class="fas fa-wallet fa-2x mb-3 text-danger"></i>
+                        <div class="stats-value">LKR <?php echo number_format($employee_stats['total_salary_expense'], 2); ?></div>
+                        <div class="stats-label">Monthly Salary Expense</div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="container mt-4 mb-5">
-            <div class="card payroll-card">
-                <div class="card-header bg-primary text-white">
-                    <h2 class="text-center mb-0">Employee Payroll Records</h2>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-bordered text-center">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Employee ID</th>
-                                    <th>Employee Name</th>
-                                    <th>Base Salary</th>
-                                    <th>Fixed Allowances</th>
-                                    <th>Overtime Pay</th>
-                                    <th>Unpaid Leave</th>
-                                    <th>EPF (8%)</th>
-                                    <th>PAYE Tax</th>
-                                    <th>Loan Recovery</th>
-                                    <th>Gross Salary</th>
-                                    <th>Net Salary</th>
-                                    <th>Payment Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if ($payroll_records && $payroll_records->num_rows > 0): ?>
-                                    <?php while ($record = $payroll_records->fetch_assoc()): ?>
-                                        <tr>
-                                            <td><?php echo htmlspecialchars($record['Employee_ID']); ?></td>
-                                            <td><?php echo htmlspecialchars($record['FullName']); ?></td>
-                                            <td><?php echo number_format($record['Base_Salary'], 2); ?></td>
-                                            <td><?php echo number_format($record['Fixed_Allowances'], 2); ?></td>
-                                            <td><?php echo number_format($record['Overtime_Pay'], 2); ?></td>
-                                            <td><?php echo number_format($record['Unpaid_Leave_Deductions'], 2); ?></td>
-                                            <td><?php echo number_format($record['Employee_EPF'], 2); ?></td>
-                                            <td><?php echo number_format($record['PAYE_Tax'], 2); ?></td>
-                                            <td><?php echo number_format($record['Loan_Recovery'], 2); ?></td>
-                                            <td><?php echo number_format($record['Gross_Salary'], 2); ?></td>
-                                            <td><?php echo number_format($record['Net_Salary'], 2); ?></td>
-                                            <td><?php echo date('Y-m-d', strtotime($record['Payment_Date'])); ?></td>
-                                        </tr>
-                                    <?php endwhile; ?>
-                                <?php else: ?>
-                                    <tr>
-                                        <td colspan="12" class="text-center">No payroll records found</td>
-                                    </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card payroll-card">
+                        <div class="card-header bg-primary text-white">
+                            <h2 class="text-center mb-0"><i class="fas fa-money-check-alt me-2"></i>Payroll Management</h2>
+                        </div>
+                        <div class="card-body">
+                            <!-- Employee Selection and Info -->
+                            <div class="form-section">
+                                <h4 class="form-section-title"><i class="fas fa-user me-2"></i>Employee Selection</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="employee_id" class="form-label">Select Employee:</label>
+                                            <select class="form-select" name="employee_id" id="employee_id" onchange="fetchEmployeeDetails()">
+                                                <option value="">-- Select Employee --</option>
+                                                <?php while ($employee = $employees_result->fetch_assoc()): ?>
+                                                    <option value="<?php echo htmlspecialchars($employee['Employee_ID']); ?>">
+                                                        <?php echo htmlspecialchars($employee['Employee_ID'] . ' - ' . $employee['FullName']); ?>
+                                                    </option>
+                                                <?php endwhile; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="payment_date" class="form-label">Payment Date:</label>
+                                            <input type="date" class="form-control" id="payment_date" name="payment_date" value="<?php echo $current_month; ?>">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Employee Information Display -->
+                                <div id="employee-info" class="employee-info d-none">
+                                    <h5><i class="fas fa-id-card me-2"></i>Employee Information</h5>
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <div class="info-row">
+                                                <span class="info-label">Name:</span>
+                                                <span class="info-value" id="emp-name">-</span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">Department:</span>
+                                                <span class="info-value" id="emp-department">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="info-row">
+                                                <span class="info-label">Base Salary:</span>
+                                                <span class="info-value" id="emp-salary">-</span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">Work Performance:</span>
+                                                <span class="info-value" id="emp-performance">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-4">
+                                            <div class="info-row">
+                                                <span class="info-label">Days Worked:</span>
+                                                <span class="info-value" id="emp-days-worked">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="info-row">
+                                                <span class="info-label">Leave Days:</span>
+                                                <span class="info-value" id="emp-leave-days">-</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="info-row">
+                                                <span class="info-label">Overtime Hours:</span>
+                                                <span class="info-value" id="emp-overtime">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Payroll Form -->
+                            <form method="POST" id="payrollForm">
+                                <input type="hidden" name="employee_id" id="form_employee_id">
+                                <input type="hidden" name="payment_date" id="form_payment_date">
+                                
+                                <div class="form-section">
+                                    <h4 class="form-section-title"><i class="fas fa-plus-circle me-2"></i>Earnings</h4>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="base_salary" class="form-label">Base Salary (LKR):</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="fas fa-money-bill"></i></span>
+                                                    <input type="number" class="form-control" step="0.01" name="base_salary" id="base_salary" required onchange="calculateSalary()">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="fixed_allowances" class="form-label">Fixed Allowances (LKR):</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="fas fa-plus"></i></span>
+                                                    <input type="number" class="form-control" step="0.01" name="fixed_allowances" id="fixed_allowances" value="0" onchange="calculateSalary()">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="overtime_pay" class="form-label">Overtime Pay (LKR):</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                                                    <input type="number" class="form-
+                                                    <input type="number" class="form-control" step="0.01" name="overtime_pay" id="overtime_pay" value="0" onchange="calculateSalary()">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="performance_bonus" class="form-label">Performance Bonus (LKR):</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="fas fa-award"></i></span>
+                                                    <input type="number" class="form-control" step="0.01" name="performance_bonus" id="performance_bonus" value="0" onchange="calculateSalary()">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-section">
+                                    <h4 class="form-section-title"><i class="fas fa-minus-circle me-2"></i>Deductions</h4>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="unpaid_leave_deductions" class="form-label">Unpaid Leave Deductions (LKR):</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="fas fa-calendar-minus"></i></span>
+                                                    <input type="number" class="form-control" step="0.01" name="unpaid_leave_deductions" id="unpaid_leave_deductions" value="0" onchange="calculateSalary()">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="loan_recovery" class="form-label">Loan Recovery (LKR):</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="fas fa-hand-holding-usd"></i></span>
+                                                    <input type="number" class="form-control" step="0.01" name="loan_recovery" id="loan_recovery" value="0" onchange="calculateSalary()">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="paye_tax" class="form-label">PAYE Tax (LKR):</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="fas fa-percent"></i></span>
+                                                    <input type="number" class="form-control" step="0.01" name="paye_tax" id="paye_tax" value="0" onchange="calculateSalary()">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-section">
+                                    <h4 class="form-section-title"><i class="fas fa-cog me-2"></i>Payment Details</h4>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="payment_method" class="form-label">Payment Method:</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text"><i class="fas fa-credit-card"></i></span>
+                                                    <select class="form-select" name="payment_method" id="payment_method" required>
+                                                        <option value="Bank Transfer">Bank Transfer</option>
+                                                        <option value="Cheque">Cheque</option>
+                                                        <option value="Cash">Cash</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Salary Summary -->
+                                <div class="form-section">
+                                    <h4 class="form-section-title"><i class="fas fa-calculator me-2"></i>Salary Summary</h4>
+                                    <div class="salary-calculator">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="payroll-summary">
+                                                    <h5 class="text-primary mb-3">Earnings</h5>
+                                                    <div class="summary-item">
+                                                        <span>Base Salary</span>
+                                                        <span id="summary-base-salary">LKR 0.00</span>
+                                                    </div>
+                                                    <div class="summary-item">
+                                                        <span>Fixed Allowances</span>
+                                                        <span id="summary-fixed-allowances">LKR 0.00</span>
+                                                    </div>
+                                                    <div class="summary-item">
+                                                        <span>Overtime Pay</span>
+                                                        <span id="summary-overtime">LKR 0.00</span>
+                                                    </div>
+                                                    <div class="summary-item">
+                                                        <span>Performance Bonus</span>
+                                                        <span id="summary-bonus">LKR 0.00</span>
+                                                    </div>
+                                                    <div class="summary-item summary-total">
+                                                        <span>Gross Salary</span>
+                                                        <span id="summary-gross">LKR 0.00</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="payroll-summary">
+                                                    <h5 class="text-danger mb-3">Deductions</h5>
+                                                    <div class="summary-item">
+                                                        <span>Employee EPF (8%)</span>
+                                                        <span id="summary-epf">LKR 0.00</span>
+                                                    </div>
+                                                    <div class="summary-item">
+                                                        <span>PAYE Tax</span>
+                                                        <span id="summary-paye">LKR 0.00</span>
+                                                    </div>
+                                                    <div class="summary-item">
+                                                        <span>Unpaid Leave Deductions</span>
+                                                        <span id="summary-unpaid-leave">LKR 0.00</span>
+                                                    </div>
+                                                    <div class="summary-item">
+                                                        <span>Loan Recovery</span>
+                                                        <span id="summary-loan">LKR 0.00</span>
+                                                    </div>
+                                                    <div class="summary-item summary-total">
+                                                        <span>Total Deductions</span>
+                                                        <span id="summary-deductions">LKR 0.00</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-3">
+                                            <div class="col-12">
+                                                <div class="payroll-summary bg-light">
+                                                    <div class="summary-item summary-total">
+                                                        <span class="h5">Net Salary</span>
+                                                        <span class="h5 text-success" id="summary-net">LKR 0.00</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i>Create Payroll Record</button>
+                                </div>
+                            </form>
+                            
+                            <!-- Payroll Records Table -->
+                            <div class="form-section mt-5">
+                                <h4 class="form-section-title"><i class="fas fa-history me-2"></i>Recent Payroll Records</h4>
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Employee</th>
+                                                <th>Payment Date</th>
+                                                <th>Gross Salary</th>
+                                                <th>Deductions</th>
+                                                <th>Net Salary</th>
+                                                <th>Method</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php if($payroll_records->num_rows > 0): ?>
+                                                <?php while($record = $payroll_records->fetch_assoc()): ?>
+                                                <tr>
+                                                    <td><?php echo htmlspecialchars($record['Payroll_ID']); ?></td>
+                                                    <td><?php echo htmlspecialchars($record['FullName']); ?></td>
+                                                    <td><?php echo htmlspecialchars(date('Y-m-d', strtotime($record['Payment_Date']))); ?></td>
+                                                    <td>LKR <?php echo number_format($record['Gross_Salary'], 2); ?></td>
+                                                    <td>LKR <?php echo number_format($record['Total_Deductions'], 2); ?></td>
+                                                    <td>LKR <?php echo number_format($record['Net_Salary'], 2); ?></td>
+                                                    <td><span class="badge-primary"><?php echo htmlspecialchars($record['Payment_Method']); ?></span></td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-info" onclick="viewPayslip(<?php echo $record['Payroll_ID']; ?>)"><i class="fas fa-eye"></i></button>
+                                                        <button class="btn btn-sm btn-primary" onclick="printPayslip(<?php echo $record['Payroll_ID']; ?>)"><i class="fas fa-print"></i></button>
+                                                    </td>
+                                                </tr>
+                                                <?php endwhile; ?>
+                                            <?php else: ?>
+                                                <tr>
+                                                    <td colspan="8" class="text-center">No payroll records found</td>
+                                                </tr>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Department Statistics -->
+                            <div class="form-section mt-5">
+                                <h4 class="form-section-title"><i class="fas fa-chart-pie me-2"></i>Department Payroll Statistics</h4>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Department</th>
+                                                <th>Employee Count</th>
+                                                <th>Average Salary</th>
+                                                <th>Total Salary</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php if($dept_stats->num_rows > 0): ?>
+                                                <?php while($dept = $dept_stats->fetch_assoc()): ?>
+                                                <tr>
+                                                    <td><?php echo htmlspecialchars($dept['Department_Name']); ?></td>
+                                                    <td><?php echo htmlspecialchars($dept['employee_count']); ?></td>
+                                                    <td>LKR <?php echo number_format($dept['avg_salary'], 2); ?></td>
+                                                    <td>LKR <?php echo number_format($dept['total_salary'], 2); ?></td>
+                                                </tr>
+                                                <?php endwhile; ?>
+                                            <?php else: ?>
+                                                <tr>
+                                                    <td colspan="4" class="text-center">No department statistics available</td>
+                                                </tr>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Toggle Menu
         function toggleMenu() {
-            const menuList = document.getElementById('menu-list');
-            menuList.classList.toggle('d-none');
+            document.getElementById('menu-list').classList.toggle('d-none');
         }
         
+        // Logout Function
         function logout() {
-            window.location.href = "logout.php";
+            window.location.href = 'logout.php';
         }
         
+        // Fetch Employee Details
         function fetchEmployeeDetails() {
             const employeeId = document.getElementById('employee_id').value;
-            if (!employeeId) return;
+            const paymentDate = document.getElementById('payment_date').value;
             
-            // Fetch employee details using AJAX - now directly to this same file
-            fetch('salary.php?employee_id=' + employeeId)
+            if (!employeeId) {
+                document.getElementById('employee-info').classList.add('d-none');
+                return;
+            }
+            
+            // Set form hidden fields
+            document.getElementById('form_employee_id').value = employeeId;
+            document.getElementById('form_payment_date').value = paymentDate;
+            
+            // AJAX request to fetch employee details
+            fetch(`HrSalary.php?employee_id=${employeeId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
+                        // Show employee info section
+                        document.getElementById('employee-info').classList.remove('d-none');
+                        
+                        // Update employee information
+                        document.getElementById('emp-name').textContent = data.name;
+                        document.getElementById('emp-department').textContent = data.department;
+                        document.getElementById('emp-salary').textContent = `LKR ${parseFloat(data.salary).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                        document.getElementById('emp-performance').textContent = `${data.task_completion}%`;
+                        document.getElementById('emp-days-worked').textContent = data.worked_days;
+                        document.getElementById('emp-leave-days').textContent = data.leave_days;
+                        document.getElementById('emp-overtime').textContent = `${data.overtime_hours} hours`;
+                        
+                        // Update form fields with calculated values
                         document.getElementById('base_salary').value = data.salary;
+                        document.getElementById('overtime_pay').value = data.overtime_pay;
                         document.getElementById('unpaid_leave_deductions').value = data.unpaid_leave_deduction;
-                        // Set other fields based on returned data if needed
+                        document.getElementById('performance_bonus').value = data.performance_bonus;
+                        
+                        // Calculate initial summary
                         calculateSalary();
                     } else {
-                        console.error('Error:', data.message);
+                        alert('Error: ' + data.message);
                     }
                 })
-                .catch(error => console.error('Error fetching employee details:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to fetch employee details. Please try again.');
+                });
         }
         
+        // Calculate Salary Summary
         function calculateSalary() {
-            // Get values
+            // Get form values
             const baseSalary = parseFloat(document.getElementById('base_salary').value) || 0;
             const fixedAllowances = parseFloat(document.getElementById('fixed_allowances').value) || 0;
             const overtimePay = parseFloat(document.getElementById('overtime_pay').value) || 0;
+            const performanceBonus = parseFloat(document.getElementById('performance_bonus').value) || 0;
             const unpaidLeaveDeductions = parseFloat(document.getElementById('unpaid_leave_deductions').value) || 0;
             const loanRecovery = parseFloat(document.getElementById('loan_recovery').value) || 0;
             const payeTax = parseFloat(document.getElementById('paye_tax').value) || 0;
             
-            // Calculate components
+            // Calculate EPF
             const employeeEpf = baseSalary * 0.08;
-            const employerEpf = baseSalary * 0.12;
-            const employerEtf = baseSalary * 0.03;
-            const grossSalary = baseSalary + fixedAllowances + overtimePay - unpaidLeaveDeductions;
+            
+            // Calculate gross salary
+            const grossSalary = baseSalary + fixedAllowances + overtimePay + performanceBonus - unpaidLeaveDeductions;
+            
+            // Calculate total deductions
             const totalDeductions = employeeEpf + payeTax + loanRecovery;
+            
+            // Calculate net salary
             const netSalary = grossSalary - totalDeductions;
             
-            // Update preview
-            document.getElementById('employee_epf_preview').textContent = employeeEpf.toFixed(2);
-            document.getElementById('employer_epf_preview').textContent = employerEpf.toFixed(2);
-            document.getElementById('employer_etf_preview').textContent = employerEtf.toFixed(2);
-            document.getElementById('gross_salary_preview').textContent = grossSalary.toFixed(2);
-            document.getElementById('total_deductions_preview').textContent = totalDeductions.toFixed(2);
-            document.getElementById('net_salary_preview').textContent = netSalary.toFixed(2);
+            // Update summary values
+            document.getElementById('summary-base-salary').textContent = `LKR ${baseSalary.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('summary-fixed-allowances').textContent = `LKR ${fixedAllowances.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('summary-overtime').textContent = `LKR ${overtimePay.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('summary-bonus').textContent = `LKR ${performanceBonus.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('summary-gross').textContent = `LKR ${grossSalary.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            document.getElementById('summary-epf').textContent = `LKR ${employeeEpf.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('summary-paye').textContent = `LKR ${payeTax.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('summary-unpaid-leave').textContent = `LKR ${unpaidLeaveDeductions.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('summary-loan').textContent = `LKR ${loanRecovery.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('summary-deductions').textContent = `LKR ${totalDeductions.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            document.getElementById('summary-net').textContent = `LKR ${netSalary.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         }
         
-        // Initialize calculation on page load
+        // View Payslip
+        function viewPayslip(payrollId) {
+            window.open(`payslip.php?id=${payrollId}`, '_blank');
+        }
+        
+        // Print Payslip
+        function printPayslip(payrollId) {
+            window.open(`payslip_print.php?id=${payrollId}`, '_blank');
+        }
+        
+        // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            calculateSalary();
+            // Ensure all required elements exist before calling calculateSalary
+            if (document.getElementById('base_salary') && document.getElementById('fixed_allowances') && document.getElementById('overtime_pay')) {
+                // Set initial form values
+                calculateSalary();
+            }
+            
+            // Close alerts after 5 seconds
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
         });
     </script>
 </body>
