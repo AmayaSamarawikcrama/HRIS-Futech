@@ -81,13 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="alert alert-danger text-center"><?= htmlspecialchars($error) ?></div>
                         <?php endif; ?>
                         
-                        <div class="d-flex justify-content-between mb-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="remember" name="remember" value="1" />
-                                <label class="form-check-label" for="remember">Remember me</label>
-                            </div>
-                            <a href="forgot_password.php">Forgot password?</a>
-                        </div>
+                        
                         
                         <div class="d-flex justify-content-center">
                             <button type="submit" class="btn btn-primary btn-lg btn-block w-100">Sign in</button>
