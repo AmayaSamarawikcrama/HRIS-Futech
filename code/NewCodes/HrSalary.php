@@ -794,7 +794,7 @@ $dept_stats = $conn->query($dept_stats_query);
                                                     <td>LKR <?php echo number_format($record['Net_Salary'], 2); ?></td>
                                                     <td><span class="badge-primary"><?php echo htmlspecialchars($record['Payment_Method']); ?></span></td>
                                                     <td>
-                                                        <button class="btn btn-sm btn-info" onclick="viewPayslip(<?php echo $record['Payroll_ID']; ?>)"><i class="fas fa-eye"></i></button>
+                                                        <!-- <button class="btn btn-sm btn-info" onclick="viewPayslip(<?php echo $record['Payroll_ID']; ?>)"><i class="fas fa-eye"></i></button> -->
                                                         <button class="btn btn-sm btn-primary" onclick="printPayslip(<?php echo $record['Payroll_ID']; ?>)"><i class="fas fa-print"></i></button>
                                                     </td>
                                                 </tr>
