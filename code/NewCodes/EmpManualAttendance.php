@@ -194,15 +194,15 @@ $conn->close();
         <div class="container-fluid">
             <span class="menu-icon" onclick="toggleMenu()">&#9776;</span>
             <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; left: 10px; z-index: 1000;">
-                <a href="HrDashboard.html" class="d-block text-decoration-none text-dark mb-2">Dashboard</a>
-                <a href="HrAddEmployee.html" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
-                <a href="HrEmployeeDetails.html" class="d-block text-decoration-none text-dark mb-2">Employee Details</a>
+                <a href="HrDashboard.php" class="d-block text-decoration-none text-dark mb-2">Dashboard</a>
+                <a href="HrAddEmployee.php" class="d-block text-decoration-none text-dark mb-2">Add Employee</a>
+                <a href="HrEmployeeDetails.php" class="d-block text-decoration-none text-dark mb-2">Employee Details</a>
                 <a href="Attendance.php" class="d-block text-decoration-none text-dark mb-2">Attendance</a>
                 <a href="Project.php" class="d-block text-decoration-none text-dark mb-2">Project</a>
                 <a href="Leave.php" class="d-block text-decoration-none text-dark mb-2">Leave</a>
-                <a href="HrSalary.html" class="d-block text-decoration-none text-dark mb-2">Salary</a>
+                <a href="HrSalary.php" class="d-block text-decoration-none text-dark mb-2">Salary</a>
                 <a href="Report.php" class="d-block text-decoration-none text-dark mb-2">Report</a>
-                <a href="Calendar.html" class="d-block text-decoration-none text-dark mb-2">Calendar</a>
+                <a href="Calendar.php" class="d-block text-decoration-none text-dark mb-2">Calendar</a>
             </div>
 
             <span class="employee-name ms-auto me-3">

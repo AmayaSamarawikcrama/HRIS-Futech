@@ -119,12 +119,12 @@ $conn->close();
         <div class="container-fluid">
             <span class="menu-icon" onclick="toggleMenu()">&#9776;</span>
             <div id="menu-list" class="d-none position-absolute bg-light border rounded p-2" style="top: 50px; left: 10px; z-index: 1000;">
-                <a href="EmpDashboard.html" class="dropdown-item">Dashboard</a>
-                <a href="EmpProfile.html" class="dropdown-item">My Profile</a>
+                <a href="EmpDashboard.php" class="dropdown-item">Dashboard</a>
+                <a href="EmpProfile.php" class="dropdown-item">My Profile</a>
                 <a href="EmpLeave.php" class="dropdown-item">Leave Request</a>
-                <a href="EmpManualAttendance.html" class="dropdown-item">My Attendance</a>
-                <a href="EmpProject.html" class="dropdown-item">Projects</a>
-                <a href="EmpSalary.html" class="dropdown-item">Salary Status</a>
+                <a href="EmpManualAttendance.php" class="dropdown-item">My Attendance</a>
+                <a href="EmpProject.php" class="dropdown-item">Projects</a>
+                <a href="EmpSalary.php" class="dropdown-item">Salary Status</a>
                 <a href="Report.php" class="dropdown-item">Report</a>
                 <a href="Company.php" class="dropdown-item">Company Details</a>
                 <a href="Calendar.php" class="dropdown-item">Calendar</a>
