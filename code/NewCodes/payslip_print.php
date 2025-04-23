@@ -20,10 +20,14 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Get company information
-$company_query = "SELECT * FROM Company_Details LIMIT 1";
-$company_result = $conn->query($company_query);
-$company = $company_result->fetch_assoc();
+// Company information - This should come from a proper company table
+// For now, use hardcoded values or create a Company table
+$company = [
+    'Company_Name' => 'Your Company Name',
+    'Address' => 'Company Address',
+    'Phone' => 'Company Phone',
+    'Email' => 'Company Email'
+];
 
 // Get payroll details
 $query = "SELECT 
@@ -31,10 +35,10 @@ $query = "SELECT
     e.First_Name,
     e.Last_Name,
     e.Email,
-    e.Phone,
-    e.Designation,
-    e.Employment_Type,
-    e.Join_Date,
+    e.Contact_Number as Phone,
+    e.Employee_Type as Designation,
+    'Full-Time' as Employment_Type, /* This should come from a proper field if available */
+    e.Hire_Date as Join_Date,
     d.Department_Name
     FROM Payroll p
     JOIN Employee e ON p.Employee_ID = e.Employee_ID
@@ -52,15 +56,16 @@ if ($result->num_rows === 0) {
 
 $payroll = $result->fetch_assoc();
 
-// Calculate statutory contributions
-$epf_employee = $payroll['Base_Salary'] * 0.08;
-$epf_employer = $payroll['Base_Salary'] * 0.12;
-$etf_employer = $payroll['Base_Salary'] * 0.03;
+// No need to recalculate - these values are already stored in the Payroll table
+// But we'll use them for reference
+$epf_employee = $payroll['Employee_EPF'];
+$epf_employer = $payroll['Employer_EPF'];
+$etf_employer = $payroll['Employer_ETF'];
 
-// Calculate gross and net values
-$gross_salary = $payroll['Base_Salary'] + $payroll['Fixed_Allowances'] + $payroll['Overtime_Pay'];
-$total_deductions = $epf_employee + $payroll['Unpaid_Leave_Deductions'] + $payroll['Loan_Recovery'] + $payroll['PAYE_Tax'];
-$net_salary = $gross_salary - $total_deductions;
+// Use the calculated values from the database
+$gross_salary = $payroll['Gross_Salary'];
+$total_deductions = $payroll['Total_Deductions'];
+$net_salary = $payroll['Net_Salary'];
 
 // Format the payment date
 $payment_date = date('F Y', strtotime($payroll['Payment_Date']));
@@ -202,9 +207,9 @@ $print_date = date('Y-m-d');
 <body>
     <div class="container">
         <div class="header">
-            <div class="company-name"><?php echo htmlspecialchars($company['Company_Name'] ?? 'Your Company Name'); ?></div>
-            <div><?php echo htmlspecialchars($company['Address'] ?? 'Company Address'); ?></div>
-            <div>Tel: <?php echo htmlspecialchars($company['Phone'] ?? 'Company Phone'); ?> | Email: <?php echo htmlspecialchars($company['Email'] ?? 'Company Email'); ?></div>
+            <div class="company-name"><?php echo htmlspecialchars($company['Company_Name']); ?></div>
+            <div><?php echo htmlspecialchars($company['Address']); ?></div>
+            <div>Tel: <?php echo htmlspecialchars($company['Phone']); ?> | Email: <?php echo htmlspecialchars($company['Email']); ?></div>
             <div class="payslip-title">PAYSLIP - <?php echo htmlspecialchars($payment_date); ?></div>
         </div>
         
@@ -247,12 +252,6 @@ $print_date = date('Y-m-d');
                         <td>Overtime Pay</td>
                         <td><?php echo number_format($payroll['Overtime_Pay'], 2); ?></td>
                     </tr>
-                    <?php if (isset($payroll['Performance_Bonus']) && $payroll['Performance_Bonus'] > 0): ?>
-                    <tr>
-                        <td>Performance Bonus</td>
-                        <td><?php echo number_format($payroll['Performance_Bonus'], 2); ?></td>
-                    </tr>
-                    <?php endif; ?>
                     <tr>
                         <td><strong>Gross Earnings</strong></td>
                         <td><strong><?php echo number_format($gross_salary, 2); ?></strong></td>
