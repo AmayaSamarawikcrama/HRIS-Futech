@@ -23,10 +23,10 @@ if ($conn->connect_error) {
 // Company information - This should come from a proper company table
 // For now, use hardcoded values or create a Company table
 $company = [
-    'Company_Name' => 'Your Company Name',
-    'Address' => 'Company Address',
-    'Phone' => 'Company Phone',
-    'Email' => 'Company Email'
+    'Company_Name' => 'Futech',
+    'Address' => 'FUTECH (Pvt) Ltd., 154/10/C, Poorwarama Road, Colombo 05, Sri Lanka',
+    'Phone' => '076-422-5592',
+    'Email' => 'info@futech.lk'
 ];
 
 // Get payroll details
