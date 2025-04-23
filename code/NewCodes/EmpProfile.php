@@ -206,21 +206,7 @@ $conn->close();
                 </div>
 
                 <form method="POST" enctype="multipart/form-data">
-                    <div class="row profile-field align-items-center">
-                        <div class="col-md-3 field-label">Profile Photo</div>
-                        <div class="col-md-9">
-                            <div class="d-flex align-items-center">
-                                <img src="<?php echo isset($user_data['Profile_Photo']) ? htmlspecialchars($user_data['Profile_Photo']) : 'assets/image.png'; ?>" 
-                                     alt="Profile Photo" class="profile-photo me-4" id="profilePhotoPreview">
-                                <div>
-                                    <button type="button" class="btn btn-primary" onclick="document.getElementById('profilePhotoInput').click()">
-                                        <i class="fas fa-camera me-2"></i>Change Photo
-                                    </button>
-                                    <input type="file" id="profilePhotoInput" name="profile_photo" class="d-none" accept="image/*" onchange="previewProfilePhoto(event)">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
 
                     <div class="row profile-field">
                         <div class="col-md-3 field-label">First Name</div>
